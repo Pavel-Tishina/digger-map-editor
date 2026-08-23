@@ -1,11 +1,16 @@
 program main;
 
 uses
-  video, draw, mouse, io;
+  video, draw, _mouse, io, _grid, _map, _ibtn, _types, _ag;
 
 var
-  r, g, b: Integer;
-  mouseOldX, mouseOldY: Word;
+  prev_mouse_lb, prev_mouse_rb : Byte;
+  r, g, b : Integer;
+  mouseOldX, mouseOldY : Word;
+  Grid_LVL, Grid_OBJ, Grid_L, Grid_R : LevelGrid;
+  Map_OBJ : LevelMap;
+  LoadBtn, SaveBtn, NewBtn, ExitBtn, LoadBtn2 : IconButton;
+  GoldImg : ArchiveGraphicFile;
 
 begin
 
@@ -18,12 +23,39 @@ begin
 
 
   SetVideoMode13h;
-  PutPixel(100, 100, 12);
-  Square(120, 120, 50, 11);
-  FilledSquare(20, 20, 50, 11, 4);
+  SetBackgroundColor(8);
 
-  Rectangle(100, 5, 150, 20, 11);
-  FilledRectangle(160, 5, 250, 20, 11, 14);
+  Grid_LVL := LevelGrid.Init(2, 27, 15, 10);
+  Grid_LVL.Draw;
+
+  Grid_OBJ := LevelGrid.Init(300, 27, 1, 5);
+  Grid_OBJ.Draw;
+  
+  Grid_L := LevelGrid.Init(261, 32, 1, 1);
+  Grid_L.Draw;
+
+  Grid_R := LevelGrid.Init(280, 32, 1, 1);
+  Grid_R.Draw;
+
+  Map_OBJ := LevelMap.Init(189, 2);
+
+  LoadBtn := IconButton.Init(113, 2, IconButtonType.Load);
+  LoadBtn.Draw;
+
+  SaveBtn := IconButton.Init(137, 2, IconButtonType.Save);
+  SaveBtn.Draw;
+
+  NewBtn  := IconButton.Init(161, 2, IconButtonType.NewLvl);
+  NewBtn.Draw;
+
+  ExitBtn := IconButton.Init(298, 178, IconButtonType.ExitApp);
+  ExitBtn.Draw;
+
+  GoldImg := ArchiveGraphicFile.Init('\DRAFT\GOLD.CG2'#0);
+  GoldImg.Draw(200, 150);
+
+  LoadBtn2 := IconButton.Init(150, 150, IconButtonType.Load);
+  LoadBtn2.Draw;
 
   if MouseInit then
   begin
@@ -32,8 +64,8 @@ begin
     // SetMouseCursor;
   end;
 
-  SaveCursorBackground(MyMouse.X, MyMouse.Y);
-  DrawCursor(MyMouse.X, MyMouse.Y);
+  // SaveCursorBackground(MyMouse.X, MyMouse.Y);
+  // DrawCursor(MyMouse.X, MyMouse.Y);
 
   repeat
     MouseUpdate();
@@ -50,15 +82,17 @@ begin
       
     end;
 
-    
-    if (MyMouse.Btn and 1) <> 0 then
-    begin      
-      if (MyMouse.X > 20) AND (MyMouse.X < 70) AND (MyMouse.Y > 20) AND (MyMouse.Y < 70) then
-        break;
 
+    if ((MyMouse.Btn and 1) = 0) AND ((prev_mouse_lb and 1) <> 0) then
+    begin
+      ExitBtn.Click(MyMouse.X, MyMouse.Y);
+      LoadBtn2.Click(MyMouse.X, MyMouse.Y);
     end;
+
+    prev_mouse_lb := MyMouse.Btn;
     
-  until (KeyPressed);
+  //until (KeyPressed);
+  until (6 > 7);
 
   SetTextMode;
 

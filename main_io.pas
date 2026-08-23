@@ -7,6 +7,7 @@ var
   FileName: PChar;
   HandleRead, HandleWrite, BytesOp, i: Word;
   Buffer : array[0..511] of Byte;
+  size: LongInt;
 
 const
   FileError: Word = $FFFF;
@@ -22,7 +23,10 @@ begin
     if HandleRead <> FileError 
     then
       begin
+        size := FileSize(HandleRead);
+        writeln('File size: ', size);
         writeln('open read ok');
+        FileSeek(HandleRead, 0, 0);
         FillChar(Buffer, SizeOf(Buffer), 0);
         BytesOp := ReadFile(HandleRead, @Buffer, SizeOf(Buffer));
         writeln('read bytes: ', BytesOp);

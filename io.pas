@@ -17,10 +17,14 @@ interface
     function CheckFileExist(Name: PChar): Boolean;
 
     function FileSeek(Handle: Word; Pos: LongInt; Origin: Byte): LongInt;
+    function FileSize(FileHandle: Word): LongInt;
 
     // KEYBOARD
     function KeyPressed: Boolean;
     function ReadKey: Word;
+
+    // APP
+    procedure CloseApp;
 
 implementation
 
@@ -186,6 +190,9 @@ implementation
 
     ////////////////////////////////////////////
 
+    // Origin = 0 - from start of file
+    // Origin = 1 - from current position
+    // Origin = 2 - from end of file
     function FileSeek(Handle: Word; Pos: LongInt; Origin: Byte): LongInt; assembler;
         asm
             mov ah,42h
@@ -209,6 +216,25 @@ implementation
             mov dx,$FFFF
 
         @@exit:
+        end;
+        
+        ////////////////////////////////////////////
+
+    function FileSize(FileHandle: Word): LongInt; assembler;
+        asm
+            mov bx, FileHandle
+            mov ax, $4202
+            xor cx, cx
+            xor dx, dx
+            int $21
+            jc @error
+            jmp @exit
+
+        @error:
+            xor ax, ax
+            xor dx, dx
+
+        @exit:
         end;
 
     ////////////////////////////////////////////
@@ -237,5 +263,15 @@ implementation
             int 16h
             { AX already has a result}
         end;
+
+    ////////////////////////////////////////////
+
+    procedure CloseApp; assembler;
+        asm
+            mov ax, 4c00h
+            int 21h
+        end;    
+
+    ////////////////////////////////////////////
 
 end.

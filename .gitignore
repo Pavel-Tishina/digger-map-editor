@@ -1,6 +1,7 @@
-.exe
-.a
-.o
-.ppu
-.git
-.obj
+*.exe
+*.a
+*.o
+*.ppu
+*.git/
+*.obj
+*.a
