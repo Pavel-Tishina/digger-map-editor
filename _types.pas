@@ -16,6 +16,7 @@ type
   IconButtonType = (Load, Save, NewLvl, ExitApp, Cross);
   
   function CellTypeChar(AType: CellType): Char;
+  function CellTypeMapPixel(AType: CellType): Byte;
   function IconButtonTypeFileName(AType: IconButtonType): PChar;
 
 // type
@@ -48,36 +49,24 @@ type
 
 
 implementation
+  const
+    CELL_TYPE_CHAR : array[CellType] of Char = (Chr(20), 'B', 'C', 'S', 'H', 'V', Chr(0));
+    CELL_TYPE_MAP_PIXEL : array[CellType] of Byte = (10, 12, 2, 0, 0, 0, 15);
+    ICON_BTN_FILE : array[IconButtonType] of PChar = ('\DRAFT\LOAD.CG2'#0, '\DRAFT\SAVE.CG2'#0, '\DRAFT\NEW.CG2'#0, '\DRAFT\EXIT.CG2'#0, ''#0);
 
   function CellTypeChar(AType: CellType): Char;
     begin
-      case AType of
-        Field:   CellTypeChar := Chr(20);
-        Gold:    CellTypeChar := 'B';
-        Gem:     CellTypeChar := 'C';
-        Hole:    CellTypeChar := 'S';
-        TonnelH: CellTypeChar := 'H';
-        TonnelV: CellTypeChar := 'V';
-        Error:   CellTypeChar := Chr(0);
-      end;
+      Result := CELL_TYPE_CHAR[AType];
     end;
 
-  // function IconButtonTypeFileName(AType: IconButtonType): PChar;
-  //   begin
-  //     case AType of
-  //       Load:    IconButtonTypeFileName := '\DRAFT\LOAD.CG2'#0;
-  //       Save:    IconButtonTypeFileName := '\DRAFT\SAVE.CG2'#0; 
-  //       NewLvl:  IconButtonTypeFileName := '\DRAFT\NEW.CG2'#0;
-  //       ExitApp: IconButtonTypeFileName := '\DRAFT\EXIT.CG2'#0;
-  //       Cross:   IconButtonTypeFileName := ''#0;
-  //     end;
-  //   end;
+  function CellTypeMapPixel(AType: CellType): Byte;
+    begin
+      Result := CELL_TYPE_MAP_PIXEL[AType];
+    end;
 
   function IconButtonTypeFileName(AType: IconButtonType): PChar;
-    const
-      C_MAP : array[IconButtonType] of PChar = ('\DRAFT\LOAD.CG2'#0, '\DRAFT\SAVE.CG2'#0, '\DRAFT\NEW.CG2'#0, '\DRAFT\EXIT.CG2'#0, ''#0);
     begin
-      Result := C_MAP[AType]; 
+      Result := ICON_BTN_FILE[AType]; 
     end;
 
 end.

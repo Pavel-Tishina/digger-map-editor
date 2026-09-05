@@ -5,7 +5,7 @@ unit _grid;
 interface
 
 uses
-  _cell, draw, _types, _util;
+  _cell, draw, _types, _util, _map;
 
 type
   Cells = array of array of LevelCell;
@@ -24,9 +24,8 @@ type
     procedure Draw;
     procedure DrawCell(x, y: Byte);
 
-    procedure SetDisable(x, y: Byte; d : Boolean);
-    procedure SetTypeCell(x, y: Byte; t: CellType);
     function GetTypeCell(x, y: Byte): CellType;
+    procedure SetTypeCell(x, y: Byte; t: CellType);
 
     function Click(x, y: Word): Boolean;
     function GetClickedCell(x, y: Word): LevelCell;
@@ -35,6 +34,9 @@ type
     
     function GetClickedCellType(x, y: Word): CellType;
     procedure SetClickedCellType(x, y: Word; t : CellType);
+
+    procedure SetMap(lvl: Level);
+    function IsSame(lvl: Level): Boolean;
      
   end;
 
@@ -48,7 +50,6 @@ implementation
       _calcY: Word;
 
     begin
-      // _offset := LineOffset[ypos] + xpos;
       _grid_size := 17;
       _x := xpos;
       _y := ypos;
@@ -66,8 +67,8 @@ implementation
         _calcY := ypos + (_grid_size * Y);
        
         for X :=0 to _xn do
-          // _cells[X, Y] := LevelCell.Init(LineOffset[_yoffset] + (xpos + (_grid_size * X)) , X, Y, 0);
           _cells[X, Y] := LevelCell.Init(X, Y, xpos + (_grid_size * X), _calcY, CellType.Field);
+
       end;
 
     end;
@@ -92,21 +93,6 @@ implementation
         _cells[x, y].Draw;
     end;
 
-    /// /// /// /// /// ///
-
-  procedure LevelGrid.SetDisable(x, y: Byte; d : Boolean);
-    var _redraw : Boolean;
-    begin
-      if btwn(x, 0, _xn) AND btwn(y, 0, _yn) then
-        begin
-          _redraw := d = _cells[x, y].IsDisable;
-          _cells[x, y].SetDisable(d);
-
-          if _redraw then
-            _cells[x, y].Draw;
-        end;
-    end;
-
     /// /// /// /// /// ///    
 
   procedure LevelGrid.SetTypeCell(x, y: Byte; t: CellType);
@@ -120,9 +106,9 @@ implementation
   function LevelGrid.GetTypeCell(x, y: Byte): CellType;
     begin
       if btwn(x, 0, _xn) AND btwn(y, 0, _yn) then
-        GetTypeCell := _cells[x, y].GetType
+        Result := _cells[x, y].GetType
       else
-        GetTypeCell := CellType.Error;
+        Result := CellType.Error;
     end;
 
     /// /// /// /// /// ///    
@@ -200,6 +186,37 @@ implementation
     end;
 
     /// /// /// /// /// ///
+
+    procedure LevelGrid.SetMap(lvl : Level);
+    var
+      x, y: Byte;
+
+    begin
+      for y := 0 to 9 do
+        for x := 0 to 14 do
+          _cells[x, y].SetType(lvl.GetType(x, y));
+    end;
+
+
+    /// /// /// /// /// ///
+
+    function LevelGrid.IsSame(lvl : Level): Boolean;
+    var
+      x, y: Byte;
+      b : Boolean;
+
+    begin
+      b := true;
+      for y := 0 to 9 do
+        for x := 0 to 14 do
+          if _cells[x, y].GetType <> lvl.GetType(x, y) then
+            begin
+              b := false;
+              break;
+            end;
+
+      Result := b;
+    end;
 
 
 end.
