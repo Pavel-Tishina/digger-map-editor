@@ -10,7 +10,7 @@ type
   ByteData = array of Byte;
 
 type
-  CellType = (Field, Gold, Gem, Hole, TonnelH, TonnelV, NULL);
+  CellType = (Field, Gold, Gem, Hole, TonnelH, TonnelV, Error);
 
 type
   IconButtonType = (Load, Save, NewLvl, ExitApp, Cross);
@@ -58,7 +58,7 @@ implementation
         Hole:    CellTypeChar := 'S';
         TonnelH: CellTypeChar := 'H';
         TonnelV: CellTypeChar := 'V';
-        NULL:    CellTypeChar := Chr(0);
+        Error:   CellTypeChar := Chr(0);
       end;
     end;
 
@@ -77,7 +77,7 @@ implementation
     const
       C_MAP : array[IconButtonType] of PChar = ('\DRAFT\LOAD.CG2'#0, '\DRAFT\SAVE.CG2'#0, '\DRAFT\NEW.CG2'#0, '\DRAFT\EXIT.CG2'#0, ''#0);
     begin
-       Result := C_MAP[AType]; 
+      Result := C_MAP[AType]; 
     end;
 
 end.

@@ -12,6 +12,8 @@ begin
   writeln('START');
   
   GoldImg := ArchiveGraphicFile.Init('\DRAFT\GOLD.CG2'#0);
+  // GoldImg := ArchiveGraphicFile.Init('\DRAFT\LOAD.CG2'#0);
+  GoldImg.Debug;
   GoldImg.GetImg;
   
   writeln('BB');

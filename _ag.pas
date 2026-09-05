@@ -52,8 +52,14 @@ implementation
           colors := r_data[0] and $0F;
           _colors := colors;
 
-          bg_color_number := r_data[1] shr 4;
-          xoffset := ((Word(r_data[2]) and $0F) shl 8) or r_data[1];
+          // bg_color_number := r_data[2] shr 4;
+          //xoffset := ((Word(r_data[2]) and $0F) shl 8) or r_data[1];
+
+          // REFACTOR THIS!!!!!
+          xoffset := Word(r_data[1]) or (Word(r_data[2]) shl 8);
+          bg_color_number := xoffset shr 12;
+          xoffset := xoffset and $0FFF;
+
           pixcount := (Word(r_data[4]) shl 8) or r_data[3];
 
           xm := xoffset;
@@ -89,7 +95,8 @@ implementation
               i := i + 1;
             end;
 
-          bg_color := palette[bg_color_number];
+          //bg_color := palette[bg_color_number];
+          bg_color := bg_color_number;
 
           image_data_size := f_size - 5 - bytes_4_pal;         // read image data
           setLength(data, image_data_size);
@@ -151,6 +158,7 @@ implementation
               end;
             
             _c := palette[data[_n] and _nb];
+            //write(_l, '-', _r, '-', _c, '  '); // debug
 
             _i := 1;
             while (_i <= _r) do

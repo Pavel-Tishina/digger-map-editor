@@ -74,7 +74,8 @@ implementation
       if btwn(x, 0, 15) AND btwn(y, 0, 9) then
         GetType := _lvl[x, y];
 
-      GetType := CellType.NULL;
+      // GetType := CellType.NULL;
+      GetType := CellType.Field;
     end;
 
   // destructor Level.Destroy;

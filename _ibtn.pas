@@ -84,15 +84,16 @@ implementation
     begin
       if (_t <> IconButtonType.Cross) then
         begin
-          setLength(_background, _s * _s);
+
+          setLength(_background, (_s + 1) * (_s + 1));
           
           _i := 0;
-          for _y := 0 to _img.GetYM do
+          for _y := _ypos to _ypos + _s do
             begin
-              _ycalc := LineOffset[_ypos + 1 + _y];
-              for _x := 0 to _img.GetXOffset do
+              _ycalc := LineOffset[_y];
+              for _x := _xpos to _xpos + _s do
                 begin
-                  _background[_i] := GetPixelOffset(_ycalc + 1 + _xpos + _x);
+                  _background[_i] := GetPixelOffset(_ycalc + _x);
                   _i := _i + 1;
                 end;
             end;
@@ -109,20 +110,22 @@ implementation
       if (_t <> IconButtonType.Cross) then
         begin
           _i := 0;
-          _y := 0;
-          _x := 0;
+          _y := _ypos;
+          _x := _xpos;
           _ycalc := LineOffset[_ypos];
           while (_i < length(_background)) do
             begin
-              if (_i >= _img.GetXOffset) then
+              PutPixelOffset(_ycalc + _x, _background[_i]);
+              
+              if (_x >= _xpos + _s) then
                 begin
-                  _x := 0;
+                  _x := _xpos;
                   _y := _y + 1;
-                  _ycalc := LineOffset[_ypos + _y];
-                end;
+                  _ycalc := LineOffset[_y];
+                end
+                else
+                  _x := _x + 1;
 
-              PutPixelOffset(_ycalc + _xpos + _x, _background[_i]);
-              _x := _x + 1;
               _i := _i + 1;
             end;
           
