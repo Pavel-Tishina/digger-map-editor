@@ -13,10 +13,13 @@ type
 
 type
   LevelGrid = class
-  public
-    _grid_size, _xn, _yn: Byte; 
-    _offset, _x, _y: Word;
-    _cells: Cells;
+    const
+      _grid_size: Byte = 17;
+
+    var
+      _xn, _yn: Byte; 
+      _offset, _x, _y: Word;
+      _cells: Cells;
 
     constructor Init(xpos, ypos: Word; xc, yc: Byte);
     // destructor Done;
@@ -36,7 +39,6 @@ type
     procedure SetClickedCellType(x, y: Word; t : CellType);
 
     procedure SetMap(lvl: Level);
-    function IsSame(lvl: Level): Boolean;
      
   end;
 
@@ -50,7 +52,6 @@ implementation
       _calcY: Word;
 
     begin
-      _grid_size := 17;
       _x := xpos;
       _y := ypos;
 
@@ -128,7 +129,6 @@ implementation
         begin
           _xxx := GetCellCoord(x, _x, _xn);
           _yyy := GetCellCoord(y, _y, _yn);
-          // writeln('==',_xxx, ',', _yyy);
           GetClickedCell := _cells[_xxx, _yyy];
 
         end
@@ -173,13 +173,10 @@ implementation
       _c := start_coord;
       for _i := 0 to lim do
         begin
-          // _c := start_coord + Word(_i * _grid_size);
-          //writeln(mouse_coord, '=',_i, ' --- ', _c, ',', _c + _grid_size, '==', btwn(mouse_coord, _c, _c + _grid_size));
-
           if (btwn(mouse_coord, _c, _c + _grid_size) = true) then
             break;
           
-          _c := _c + _grid_size;
+          inc(_c, _grid_size);
         end;
 
         Result := _i;
@@ -194,29 +191,11 @@ implementation
     begin
       for y := 0 to 9 do
         for x := 0 to 14 do
-          _cells[x, y].SetType(lvl.GetType(x, y));
-    end;
-
-
-    /// /// /// /// /// ///
-
-    function LevelGrid.IsSame(lvl : Level): Boolean;
-    var
-      x, y: Byte;
-      b : Boolean;
-
-    begin
-      b := true;
-      for y := 0 to 9 do
-        for x := 0 to 14 do
           if _cells[x, y].GetType <> lvl.GetType(x, y) then
             begin
-              b := false;
-              break;
+              _cells[x, y].SetType(lvl.GetType(x, y));
+              _cells[x, y].Draw;
             end;
-
-      Result := b;
     end;
-
 
 end.

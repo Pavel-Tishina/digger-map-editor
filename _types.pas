@@ -14,39 +14,13 @@ type
 
 type
   IconButtonType = (Load, Save, NewLvl, ExitApp, Cross);
+
+type
+  ModalType = (FileWindow, ChoiseWindow, YesNoWindow, SimpleWindow);
   
   function CellTypeChar(AType: CellType): Char;
   function CellTypeMapPixel(AType: CellType): Byte;
   function IconButtonTypeFileName(AType: IconButtonType): PChar;
-
-// type
-//   TLetterBitmap = record
-//     bitmap: array[0..7][0..7] of Byte;
-//   end;
-
-// type
-//   TFont = record
-//     transpColor: Byte;
-//     symbolColor: Byte;
-//     shadowColor: Byte;
-//     bitmaps: array [0..57] of TLetterBitmap;
-//   end;
-
-// type
-//   TCFGRecord = record
-//     length, colors: Byte;
-//   end;
-
-// type
-//   TCGF = record
-//     ver: Byte;
-//     colors: Byte;
-//     transpColor: Byte;
-//     offset: Word;
-//     pixels: Word;
-//     records: array of TCFGRecord;
-//   end;
-
 
 implementation
   const

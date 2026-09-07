@@ -2,19 +2,19 @@
 program main;
 
 uses
-  video, draw, _mouse, io, _grid, _map, _ibtn, _types, _ag, _util, _cell;
+  video, draw, _mouse, io, _grid, _map, _ibtn, _types, _ag, _util, _cell, _font, _windows;
 
 var
-  prev_mouse_lb, prev_mouse_rb: Byte;
-  _gold_n, _gold_n_pre: ShortInt;
-  r, g, b : Integer;
+  prev_mouse_lb, prev_mouse_rb, _slvl: Byte;
+  _gold_n: ShortInt;
   mouseOldX, mouseOldY : Word;
   Grid_LVL, Grid_OBJ, Grid_L, Grid_R : LevelGrid;
   Map_OBJ : LevelMap;
-  LoadBtn, SaveBtn, NewBtn, ExitBtn, LoadBtn2 : IconButton;
-  GoldImg : ArchiveGraphicFile;
+  LoadBtn, SaveBtn, NewBtn, ExitBtn : IconButton;
   _click_cell_type : CellType;
   _click_lvl_cell : LevelCell;
+  ModalButton: TModalButton;
+
 
 function AddGold(old_type, new_type : CellType; gold_n : ShortInt): Boolean;
   begin
@@ -37,7 +37,7 @@ function CheckLevelMapChange(old_type, new_type : CellType; gold_n : ShortInt): 
 
 begin
   _gold_n := 0;
-  _gold_n_pre := 0;
+  _slvl := 0;
 
   mouseOldX := 0;
   mouseOldY := 0;
@@ -45,7 +45,6 @@ begin
   MyMouse.X := 0;
   MyMouse.Y := 0;
   MyMouse.Btn := 0;
-
 
   SetVideoMode13h;
   SetBackgroundColor(8);
@@ -83,14 +82,20 @@ begin
   ExitBtn := IconButton.Init(298, 178, IconButtonType.ExitApp);
   ExitBtn.Draw;
 
-  // GoldImg := ArchiveGraphicFile.Init('\DRAFT\GOLD.CG2'#0);
-  // GoldImg.Draw(200, 150);
-
-  // LoadBtn2 := IconButton.Init(150, 150, IconButtonType.Load);
-  // LoadBtn2.Draw;
-
   prev_mouse_lb := 0;
   prev_mouse_rb := 0;
+
+  // FONT := TFont.Create;
+  // FONT.DrawString(10, 20, 'HELL 666 # 542 GREETINGS');
+
+  DrawString(10, 20, 'HELL 666 # 542 GREETINGS');
+
+  ModalButton := TModalButton.Create(3, 3, 60, 'WELL');
+  ModalButton.Draw;
+
+  //FONT.Draw(5, 5);
+  // writeln('BBB');
+  // FONT.DrawABC(5, 5);
 
   if MouseInit then
   begin
@@ -184,28 +189,33 @@ begin
 
               if (CheckLevelMapChange(_click_lvl_cell.GetType, _click_cell_type, _gold_n)) then
                 begin
-                  // if (_click_cell_type = CellType.Gold) and (_click_lvl_cell.GetType <> CellType.Gold) then
-                  //   _gold_n := _gold_n + 1
-                  // else if (_click_lvl_cell.GetType = CellType.Gold) and (_click_cell_type <> CellType.Gold) then
-                  //   _gold_n := _gold_n - 1;
-
                   if AddGold(_click_lvl_cell.GetType, _click_cell_type, _gold_n) then
                     _gold_n := _gold_n + 1
                   else if RemGold(_click_lvl_cell.GetType, _click_cell_type, _gold_n) then
                     _gold_n := _gold_n - 1;
 
-                  // if (Grid_L.GetTypeCell(0, 0) = CellType.Gold) then
-                  //   Grid_L.SetDisable(0, 0, _gold_n >= 8);
-
-                  // if (Grid_R.GetTypeCell(0, 0) = CellType.Gold) then
-                  //   Grid_R.SetDisable(0, 0, _gold_n >= 8);
-                  
                   Grid_LVL.SetTypeCell(_click_lvl_cell.X, _click_lvl_cell.Y, _click_cell_type);
                   Grid_LVL.DrawCell(_click_lvl_cell.X, _click_lvl_cell.Y);
 
-                  // _gold_n_pre := _gold_n;
+                  Map_OBJ.SetType(_click_lvl_cell.X, _click_lvl_cell.Y, _click_cell_type);
 
+                  // _gold_n_pre := _gold_n;
                   // writeln(_gold_n, ' ', _click_lvl_cell.GetType, '-', _click_cell_type);
+                end;
+
+            end;
+
+          if Map_OBJ.Click(MyMouse.X, MyMouse.Y) then
+            begin
+              _slvl := Map_OBJ.SelectLevel(MyMouse.X, MyMouse.Y);
+              writeln(_slvl);
+
+              if btwn(_slvl, 0, 7) then
+                begin
+                  Grid_LVL.SetMap(Map_OBJ.GetLevel(_slvl));
+                  
+                  Map_OBJ.SetActive(_slvl);
+                  Map_OBJ.DrawLvl(_slvl);
                 end;
 
             end;

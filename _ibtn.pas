@@ -11,12 +11,14 @@ uses
 
 type
   IconButton = class
-  public
-    _s : Byte;
-    _xpos, _ypos : Word;
-    _t : IconButtonType;
-    _img : ArchiveGraphicFile;
-    _background: ByteData;
+    const
+      _s : Byte = 19;
+
+    var
+      _xpos, _ypos : Word;
+      _t : IconButtonType;
+      _img : ArchiveGraphicFile;
+      _background: ByteData;
 
     constructor Init(x, y: Word; t: IconButtonType);
 
@@ -34,7 +36,6 @@ implementation
 
   constructor IconButton.Init(x, y: Word; t: IconButtonType);
     begin
-      _s := 19;
       _xpos := x;
       _ypos := y;
       _t := t;
@@ -94,7 +95,7 @@ implementation
               for _x := _xpos to _xpos + _s do
                 begin
                   _background[_i] := GetPixelOffset(_ycalc + _x);
-                  _i := _i + 1;
+                  inc(_i);
                 end;
             end;
           
@@ -120,13 +121,13 @@ implementation
               if (_x >= _xpos + _s) then
                 begin
                   _x := _xpos;
-                  _y := _y + 1;
+                  inc(_y);
                   _ycalc := LineOffset[_y];
                 end
                 else
-                  _x := _x + 1;
+                  inc(_x);
 
-              _i := _i + 1;
+              inc(_i);
             end;
           
             setLength(_background, 0);

@@ -9,10 +9,13 @@ uses
 
 type
   LevelCell = class
-  public
-    _r, _xi, _yi: Byte;
-    _x, _y: Word;
-    _t: CellType;
+    const
+      _r : Byte = 17;
+
+    var  
+      _xi, _yi: Byte;
+      _x, _y: Word;
+      _t: CellType;
 
     constructor Init(xi, yi : Byte; x, y: Word; t: CellType);
 
@@ -24,13 +27,10 @@ type
     function Y: Word;
   end;
 
-    
-
 implementation
 
     constructor LevelCell.Init(xi, yi : Byte; x, y: Word; t: CellType);
       begin
-        _r := 17;
         _x := x;
         _y := y;
         _t := t;

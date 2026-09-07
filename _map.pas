@@ -27,11 +27,14 @@ type
 
 type
   LevelMap = class
-  public
-    _xpos, _ypos: Word;
-    _active, _xm, _ym: Byte;
+    const
+      _xm : Byte = 16;
+      _ym : Byte = 11;
 
-    _levels: array[0..7] of Level;
+    var
+      _xpos, _ypos: Word;
+      _active: Byte;
+      _levels: array[0..7] of Level;
 
     constructor Init(xpos, ypos: Word);
 
@@ -82,14 +85,6 @@ implementation
         GetType := CellType.Error;
     end;
 
-  // destructor Level.Destroy;
-  // begin
-  //   _lvl := nil;
-  //   inherited Destroy;
-  // end;
-
-
-
       /// Level Impl ///
 
     constructor LevelMap.Init(xpos, ypos: Word);
@@ -100,19 +95,16 @@ implementation
       _xpos := xpos;
       _ypos := ypos;
 
-    _active := 0;
-    _xm := 16;
-    _ym := 11;
+      _active := 0;
 
-    for n := 0 to 7 do
-      begin
-        _levels[n] := Level.Init;
-        if n = _active then
-          c := 15
-        else
-          c := 7;
+      for n := 0 to 7 do
+        begin
+          _levels[n] := Level.Init;
+          if n = _active then
+            c := 15
+          else
+            c := 7;
         
-
         FilledRectangle(_xpos + (_xm * n), _ypos, _xpos + _xm + (_xm * n), _ypos + _ym, c, 10);
       end;
 
@@ -170,7 +162,7 @@ implementation
 
     function LevelMap.SelectLevel(x, y: Word): Byte;
     var
-      n, i : Byte;
+      n : Byte;
 
     begin
       if Click(x, y) then

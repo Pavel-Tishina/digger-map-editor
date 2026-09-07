@@ -21,9 +21,10 @@ type
     function GetPixelCount: Word;
     function GetTrasperentColor: Byte;
     
-    // function GetImg: ImageData;
+    function GetImg2: ImageData;
     function GetImg: ByteData;
     procedure Draw(x, y: Word);
+    procedure Draw2(x, y: Word);
 
     procedure Debug;
 
@@ -127,22 +128,21 @@ implementation
         GetTrasperentColor := bg_color;
       end;
 
-    // function ArchiveGraphicFile.GetImg: ImageData;
-    function ArchiveGraphicFile.GetImg: ByteData;
+    function ArchiveGraphicFile.GetImg2: ImageData;
       var
-        // _img : ImageData;
-        _img : ByteData;
-        _l, _c, _cn, _nb : Byte;
-        _x, _n, _r, _i: Word;
+        _img : ImageData;
+        _l, _c, _nb : Byte;
+        _x, _y, _n, _r, _i: Word;
 
       begin
-        // setLength(_img, xm + 1, ym + 1);
-        setLength(_img, pixcount);
+        setLength(_img, xm + 1, ym + 1);
         _nb := (1 shl color_bits) - 1;
         _x := 0;
-
+        _y := 0;
         _n := 0;
-        while (_n <= length(data)) do
+
+
+        while (_n < length(data)) do
           begin
             _l := ((data[_n] shr 7) and 1);
 
@@ -153,27 +153,78 @@ implementation
               end
             else
               begin
+                if (_n + 1 >= length(data)) then break;
                 _r := ((data[_n] and $7F) shl (8 - color_bits)) or (data[_n + 1] shr color_bits);
                 _n := _n + 1;
               end;
             
             _c := palette[data[_n] and _nb];
-            //write(_l, '-', _r, '-', _c, '  '); // debug
 
             _i := 1;
             while (_i <= _r) do
               begin
-                // if _x >= length(_img) then
-                //   break;
+                if (_x >= xm) then
+                  begin
+                    _x := 0;
+                    inc(_y);
+                  end;
 
-                _img[_x] := _c;
+                if (_y <= ym) then
+                  _img[_x, _y] := _c;
 
-                _x := _x + 1;
-                _i := _i + 1;
+                inc(_x);
+                inc(_i);
               end;
 
+            inc(_n);
+          end;
+
+        Result := _img;
+      end;
+    
+    function ArchiveGraphicFile.GetImg: ByteData;
+      var
+        // _img : ImageData;
+        _img : ByteData;
+        _l, _c, _nb : Byte;
+        _x, _n, _r, _i: Word;
+
+      begin
+        // setLength(_img, xm + 1, ym + 1);
+        setLength(_img, pixcount);
+        _nb := (1 shl color_bits) - 1;
+        _x := 0;
+
+        _n := 0;
+        while (_n < length(data)) do
+          begin
+            _l := ((data[_n] shr 7) and 1);
+
+            if (_l = 0)
+            then
+              begin    
+                _r := (data[_n] shr color_bits) and ((1 shl (7 - color_bits)) - 1);
+              end
+            else
+              begin
+                if (_n + 1 >= length(data)) then break;
+                _r := ((data[_n] and $7F) shl (8 - color_bits)) or (data[_n + 1] shr color_bits);
+                inc(_n);
+              end;
             
-            _n := _n + 1;
+            _c := palette[data[_n] and _nb];
+
+            _i := 1;
+            while (_i <= _r) do
+              begin
+                if (_x < pixcount) then
+                  _img[_x] := _c;
+
+                inc(_x);
+                inc(_i);
+              end;
+
+            inc(_n);
           end;
 
         GetImg := _img;
@@ -196,16 +247,40 @@ implementation
             if (_img[_i] <> bg_color) then
               PutPixelOffset(_ycalc + x + _xm, _img[_i]);
 
-            _xm := _xm + 1;
+            inc(_xm);
             if (_xm = xoffset) then
               begin
                 _xm := 0;
-                _ym := _ym + 1;
+                inc(_ym);
                 _ycalc := LineOffset[y + _ym];
               end;
           end;
 
       end;
+
+
+    procedure ArchiveGraphicFile.Draw2(x, y: Word);
+      var 
+        _xm, _ym, _xi, _yi, _ycalc : Word;
+        _img : ImageData;
+      
+      begin
+        _img := GetImg2;
+
+        _xm := High(_img);
+        _ym := High(_img[0]);
+
+        for _yi := 0 to _ym do
+          begin
+            _ycalc := LineOffset[y + _yi];
+            
+            for _xi := 0 to _xm do
+              // if _img[_xi, _yi] <> bg_color then
+                PutPixelOffset(_ycalc + x + _xi, _img[_xi, _yi]);  
+          end;
+
+      end;
+
 
       procedure ArchiveGraphicFile.Debug;
         var _i : Byte;
@@ -225,7 +300,7 @@ implementation
           while (_i < length(palette)) do
             begin
               writeln('  ', _i, ' : ', palette[_i]);
-              _i := _i + 1;
+              inc(_i);
             end;
             
         end;
