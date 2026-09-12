@@ -19,6 +19,16 @@ interface
     function FileSeek(Handle: Word; Pos: LongInt; Origin: Byte): LongInt;
     function FileSize(FileHandle: Word): LongInt;
 
+    // DIR / FILE LIST
+    // Scans directory Path (e.g. '\DRAFT\') for files with the .PIC extension
+    // and stores their names into the caller buffer List, which must be an
+    // array of String[12] (each element 13 bytes). Returns the number of
+    // stored names.
+    function FindFiles(Path: PChar; List: Pointer; MaxCount: Word): Word;
+
+    // Returns the total number of .PIC files in directory Path.
+    function CountLVLFiles(Path: PChar): Word;
+
     // KEYBOARD
     function KeyPressed: Boolean;
     function ReadKey: Word;
@@ -235,6 +245,166 @@ implementation
             xor dx, dx
 
         @exit:
+        end;
+
+    ////////////////////////////////////////////
+
+    var
+        DTA_Buf: array[0..42] of Byte;
+        SearchSpec: array[0..80] of Byte;
+
+    function CountLVLFiles(Path: PChar): Word; assembler;
+        asm
+            { Set DTA (AH=1Ah): DS:DX -> DTA_Buf }
+            mov ah, 1Ah
+            mov dx, offset DTA_Buf
+            int 21h
+
+            { build search spec: Path + '*.PIC' }
+            mov si, Path
+            mov di, offset SearchSpec
+            push ds
+            pop es
+            cld
+        @@CopyPath:
+            mov al, [si]
+            inc si
+            mov [di], al
+            inc di
+            test al, al
+            jnz @@CopyPath
+            dec di                      { step back over the null }
+
+            mov byte ptr [di], '*'
+            inc di
+            mov byte ptr [di], '.'
+            inc di
+            mov byte ptr [di], 'L'
+            inc di
+            mov byte ptr [di], 'V'
+            inc di
+            mov byte ptr [di], 'L'
+            inc di
+            mov byte ptr [di], 0
+
+            { FindFirst (AH=4Eh): DS:DX -> search spec, CX = attributes ($10 = also dirs) }
+            mov ah, 4Eh
+            mov dx, offset SearchSpec
+            mov cx, $10
+            int 21h
+            jnc @@HaveFirst
+
+            xor ax, ax                      { no files }
+            jmp @@Exit
+
+        @@HaveFirst:
+            xor dx, dx                      { DX = counter }
+
+        @@Loop:
+            { skip directories via the attribute byte at DTA+21 }
+            test byte ptr [DTA_Buf + 21], $10
+            jnz @@Next
+            inc dx
+
+        @@Next:
+            mov ah, 4Fh                     { FindNext }
+            int 21h
+            jnc @@Loop
+
+            mov ax, dx
+
+        @@Exit:
+        end;
+
+    function FindFiles(Path: PChar; List: Pointer; MaxCount: Word): Word; assembler;
+        asm
+            { Set DTA (AH=1Ah): DS:DX -> DTA_Buf }
+            mov ah, 1Ah
+            mov dx, offset DTA_Buf
+            int 21h
+
+            { build search spec: Path + '*.PIC' }
+            mov si, Path
+            mov di, offset SearchSpec
+            push ds
+            pop es
+            cld
+        @@CopyPath:
+            mov al, [si]
+            inc si
+            mov [di], al
+            inc di
+            test al, al
+            jnz @@CopyPath
+            dec di                      { step back over the null }
+
+            mov byte ptr [di], '*'
+            inc di
+            mov byte ptr [di], '.'
+            inc di
+            mov byte ptr [di], 'L'
+            inc di
+            mov byte ptr [di], 'V'
+            inc di
+            mov byte ptr [di], 'L'
+            inc di
+            mov byte ptr [di], 0
+
+            { FindFirst (AH=4Eh): DS:DX -> search spec, CX = attributes ($10 = also dirs) }
+            mov ah, 4Eh
+            mov dx, offset SearchSpec
+            mov cx, $10
+            int 21h
+            jnc @@HaveFirst
+
+            xor ax, ax                      { no files }
+            jmp @@Exit
+
+        @@HaveFirst:
+            xor dx, dx                      { DX = count of stored names }
+            mov bx, List                    { BX = output pointer (element = String[12]) }
+
+        @@Loop:
+            { skip directories: DTA+21 holds the found file attributes }
+            test byte ptr [DTA_Buf + 21], $10
+            jnz @@Next
+
+            cmp dx, MaxCount                { buffer full? }
+            jae @@Done
+
+            { measure filename length (DTA+30.., ASCIIZ, max 12) }
+            mov si, offset DTA_Buf + 30
+            xor cx, cx
+        @@LenLoop:
+            cmp byte ptr [si], 0
+            je @@LenDone
+            inc si
+            inc cx
+            cmp cx, 12
+            jb @@LenLoop
+        @@LenDone:
+            { store ShortString[12]: length byte + chars }
+            mov byte ptr [bx], cl
+            mov di, bx
+            inc di
+            mov si, offset DTA_Buf + 30     { reset source to filename start }
+            push ds
+            pop es
+            cld
+            rep movsb
+
+            add bx, 13                      { next String[12] element }
+            inc dx                          { count++ }
+
+        @@Next:
+            mov ah, 4Fh                     { FindNext }
+            int 21h
+            jnc @@Loop
+
+        @@Done:
+            mov ax, dx
+
+        @@Exit:
         end;
 
     ////////////////////////////////////////////

@@ -16,7 +16,7 @@ type
   IconButtonType = (Load, Save, NewLvl, ExitApp, Cross);
 
 type
-  ModalType = (FileWindow, ChoiseWindow, YesNoWindow, SimpleWindow);
+  ModalType = (FileWindow, FileNameWindow, ChoiseWindow, YesNoWindow, SimpleWindow);
   
   function CellTypeChar(AType: CellType): Char;
   function CellTypeMapPixel(AType: CellType): Byte;

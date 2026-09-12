@@ -101,7 +101,15 @@ implementation
           
           FilledSquare(_xpos, _ypos, _s, 7, 0);          
           _img.Draw(_xpos + 1, _ypos + 1); // TODO !!!! Hallo! Ich habe an dieser Zeile aufgehört.
+        end
+
+      else
+        begin
+          FilledSquare(_xpos, _ypos, _s, 7, 0);
+          Line(_xpos + 2, _ypos + 2, _xpos + _s - 2, _ypos + _s - 2, 5);
+          Line(_xpos + 2, _ypos + _s - 2, _xpos + _s - 2, _ypos + 2, 5);
         end;
+
     end;
 
   procedure IconButton.Hide;

@@ -13,7 +13,8 @@ var
   LoadBtn, SaveBtn, NewBtn, ExitBtn : IconButton;
   _click_cell_type : CellType;
   _click_lvl_cell : LevelCell;
-  ModalButton: TModalButton;
+  Modal: TModal;
+
 
 
 function AddGold(old_type, new_type : CellType; gold_n : ShortInt): Boolean;
@@ -90,8 +91,16 @@ begin
 
   DrawString(10, 20, 'HELL 666 # 542 GREETINGS');
 
-  ModalButton := TModalButton.Create(3, 3, 60, 'WELL');
-  ModalButton.Draw;
+  Modal := TModal.Create(
+      'ATTENTION WINDOW TEST', 
+      [
+        'LINE 1: I WRITE THIS FOR TEST ONLY', 
+        'LINE 2: I HOPE YOU SEE IT'
+      ], 
+      40, 40,
+      ModalType.YesNoWindow
+    );
+  Modal.Show;
 
   //FONT.Draw(5, 5);
   // writeln('BBB');
