@@ -8,18 +8,18 @@ uses
   io, draw, _types, _util, _font;
 
 
-  TFileScroll = class
+  TFileScroll = class(TGUI)
     const
       _s_line         : Byte = 4;
       _l_line         : Byte = 12;
       _inside_marging : Byte = 2;
       _scroll_xm      : Byte = 4;
       _files_window_m : Byte = 10;
-      _ym             : Byte = 148;
+      _scroll_ym      : Byte = 148;
 
     var
       _show         : Boolean;
-      _x, _y, _files: Word;
+      _files        : Word;
       _files_pos_inx: Byte;
       _files_idexes : array of array of Word;
       _cube_y       : array of Real;
@@ -28,7 +28,6 @@ uses
 
     constructor Create(x, y, files: Word);
 
-    function IsClick(x, y: Word): Boolean;
     function IsUpClick(y: Word): Boolean;
     function IsDownClick(y: Word): Boolean;
     
@@ -49,40 +48,37 @@ implementation
     begin
       _show := files > _files_window_m;
 
-      if files > _files_window_m then
+      if files <= _files_window_m then 
+        exit;
+
+      _x := x;
+      _y := y;
+      _xm := x + _l_line;
+      _ym := y + _l_line;
+
+      _files := files;
+      _files_pos_inx := 0;
+      _pre_inx := 0;
+
+      _n := (files div _files_window_m) + 1;
+      setLength(_files_idexes, _n, _files_window_m);
+      setLength(_cube_y, _n);
+      _c := (_scroll_ym div _n) + 1;
+      _r := _scroll_ym / _n;
+      _cube_ym := rnd((_scroll_ym / files) * _n);
+        
+      if _cube_ym <= 1 then
+        _cube_ym := 2;
+
+      for _i := 0 to length(_files_idexes) - 1 do
         begin
-          _x := x;
-          _y := y;
-          _files := files;
-          _files_pos_inx := 0;
-          _pre_inx := 0;
-
-          _n := (files div _files_window_m) + 1;
-          setLength(_files_idexes, _n, _files_window_m);
-          setLength(_cube_y, _n);
-          _c := (_ym div _n) + 1;
-          _r := _ym / _n;
-          _cube_ym := rnd((_ym / files) * _n);
-          if _cube_ym <= 1
-             _cube_ym := 2;
-
-
-          for _i := 0 to length(_files_idexes) - 1 do
-            begin
-              _cube_y[_i] := _y + _l_line + (_r * _i);
-              _n := _i * _files_window_m;
+          _cube_y[_i] := _y + _l_line + (_r * _i);
+          _n := _i * _files_window_m;
               
-              for _j := 0 to _files_window_m - 1 do
-                _files_idexes[_i, _i] := _n + _j;
-            end;
+            for _j := 0 to _files_window_m - 1 do
+            _files_idexes[_i, _i] := _n + _j;
         end;
-    end;
 
-  // // // // // // // // //
-
-  function TFileScroll.IsClick(x, y: Word): Boolean;
-    begin
-      Result := _show and btwn(x, _x, _x + _l_line) and btwn(y, _y, _y + _ym);
     end;
 
   // // // // // // // // //
@@ -106,7 +102,7 @@ implementation
       __y : Byte;
     begin
       if isUp then
-        __y := _ym
+        __y := _scroll_ym
       else
         __y := 0;
 
@@ -133,7 +129,7 @@ implementation
         end 
       else if (isUp = False) and (_files_pos_inx < length(_files_idexes) - 1) then
         begin
-          __y := _y + _ym + _l_line;
+          __y := _y + _scroll_ym + _l_line;
           Rectangle(_x + 6, __y - 4, _x + 7, __y - 7, 7);
           Rectangle(_x + 5, __y - 7, _x + 8, __y - 8, 7);
           Rectangle(_x + 4, __y - 9, _x + 9, __y - 10, 7);            
@@ -144,7 +140,7 @@ implementation
 
   procedure DrawScrollLine;
     begin
-      FilledRectangle(_x + _s_line, _y + _l_line, _x + _s_line * 2, _y + _l_line + _ym, 0);
+      FilledRectangle(_x + _s_line, _y + _l_line, _x + _s_line * 2, _y + _l_line + _scroll_ym, 0);
     end;
 
   // // // // // // // // //

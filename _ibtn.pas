@@ -7,8 +7,6 @@ interface
 uses
   draw, _types, _util, io, video, _ag;
 
-  /// Level ///
-
 type
   IconButton = class
     const
@@ -26,13 +24,10 @@ type
     
     procedure Draw;
     procedure Hide;
-
-
   end;
 
 
 implementation
-
 
   constructor IconButton.Init(x, y: Word; t: IconButtonType);
     begin
@@ -116,8 +111,11 @@ implementation
     var _x, _y, _ycalc, _i: Word;
     
     begin
-      if (_t <> IconButtonType.Cross) then
-        begin
+      if (_t = IconButtonType.Cross) then
+        exit;
+
+      // if (_t <> IconButtonType.Cross) then
+      //   begin
           _i := 0;
           _y := _ypos;
           _x := _xpos;
@@ -139,7 +137,7 @@ implementation
             end;
           
             setLength(_background, 0);
-        end;
+        // end;
     end;
 
 end.

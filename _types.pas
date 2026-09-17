@@ -3,6 +3,9 @@ unit _types;
 
 interface
 
+uses
+  _util;
+
 type
   ImageData = array of array of Byte;
 
@@ -17,7 +20,28 @@ type
 
 type
   ModalType = (FileWindow, FileNameWindow, ChoiseWindow, YesNoWindow, SimpleWindow);
+
+type
+  TResultType = (rtBoolean, rtShortString, rtWord);
+
+TWindowResult = packed record
+  case Kind: TResultType of
+    rtBoolean:     (B: Boolean);
+    rtShortString: (S: ShortString);
+    rtWord:        (W: Word);
+end;
+
+TGUI = class
+  _x, _y, _xm, _ym: Word;
+
+  function IsClick(x, y: Word): Boolean; virtual;
+  function ObjX  : Word; virtual;
+  function ObjY  : Word; virtual;
+  function ObjXM : Word; virtual;
+  function ObjYM : Word; virtual;      
+end;
   
+
   function CellTypeChar(AType: CellType): Char;
   function CellTypeMapPixel(AType: CellType): Byte;
   function IconButtonTypeFileName(AType: IconButtonType): PChar;
@@ -41,6 +65,34 @@ implementation
   function IconButtonTypeFileName(AType: IconButtonType): PChar;
     begin
       Result := ICON_BTN_FILE[AType]; 
+    end;
+
+  // // // // // // // // // // // //
+  // TGUI
+
+  function TGUI.IsClick(x, y: Word): Boolean;
+    begin
+      Result := btwn(x, _x, _xm) and btwn(y, _y, _ym);
+    end;
+  
+  function TGUI.ObjX: Word;
+    begin
+      Result := _x;
+    end;
+
+  function TGUI.ObjY: Word;
+    begin
+      Result := _y;
+    end;
+
+  function TGUI.ObjXM: Word;
+    begin
+      Result := _xm;
+    end;
+
+  function TGUI.ObjYM: Word;
+    begin
+      Result := _ym;
     end;
 
 end.

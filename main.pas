@@ -2,18 +2,19 @@
 program main;
 
 uses
-  video, draw, _mouse, io, _grid, _map, _ibtn, _types, _ag, _util, _cell, _font, _windows;
+  design, video, draw, _mouse, io, _grid, _map, _ibtn, _types, _ag, _util, _cell, _font;
 
 var
   prev_mouse_lb, prev_mouse_rb, _slvl: Byte;
   _gold_n: ShortInt;
+  kkey : Word;
   mouseOldX, mouseOldY : Word;
   Grid_LVL, Grid_OBJ, Grid_L, Grid_R : LevelGrid;
   Map_OBJ : LevelMap;
   LoadBtn, SaveBtn, NewBtn, ExitBtn : IconButton;
   _click_cell_type : CellType;
   _click_lvl_cell : LevelCell;
-  Modal: TModal;
+  // Modal: TModal;
 
 
 
@@ -91,16 +92,16 @@ begin
 
   DrawString(10, 20, 'HELL 666 # 542 GREETINGS');
 
-  Modal := TModal.Create(
-      'ATTENTION WINDOW TEST', 
-      [
-        'LINE 1: I WRITE THIS FOR TEST ONLY', 
-        'LINE 2: I HOPE YOU SEE IT'
-      ], 
-      40, 40,
-      ModalType.YesNoWindow
-    );
-  Modal.Show;
+  // Modal := TModal.Create(
+  //     'ATTENTION WINDOW TEST', 
+  //     [
+  //       'LINE 1: I WRITE THIS FOR TEST ONLY', 
+  //       'LINE 2: I HOPE YOU SEE IT'
+  //     ], 
+  //     40, 40,
+  //     ModalType.YesNoWindow
+  //   );
+  // Modal.Show;
 
   //FONT.Draw(5, 5);
   // writeln('BBB');
@@ -149,7 +150,7 @@ begin
             // LoadBtn2.Click(MyMouse.X, MyMouse.Y);
 
             // Tool
-            if (Grid_OBJ.Click(MyMouse.X, MyMouse.Y) = true) then
+            if Grid_OBJ.IsClick(MyMouse.X, MyMouse.Y) then
               begin
                 _click_cell_type := Grid_OBJ.GetClickedCellType(MyMouse.X, MyMouse.Y);
                 // writeln(_click_cell_type);
@@ -170,10 +171,10 @@ begin
             // ExitBtn.Click(MyMouse.X, MyMouse.Y);
 
             // Tool
-            if (Grid_OBJ.Click(MyMouse.X, MyMouse.Y) = true) then
+            if Grid_OBJ.IsClick(MyMouse.X, MyMouse.Y) then
               begin
                 _click_cell_type := Grid_OBJ.GetClickedCellType(MyMouse.X, MyMouse.Y);
-                // writeln(_click_cell_type);
+                writeln(_click_cell_type);
 
                 if ((_click_cell_type <> CellType.Error) and (_click_cell_type <> Grid_R.GetTypeCell(0, 0))) then
                   begin
@@ -185,7 +186,7 @@ begin
 
           end;
 
-          if Grid_LVL.Click(MyMouse.X, MyMouse.Y) then
+          if Grid_LVL.IsClick(MyMouse.X, MyMouse.Y) then
             begin
               if RBtnRelease(MyMouse.Btn, prev_mouse_rb) then
                 _click_cell_type := Grid_R.GetTypeCell(0, 0)
@@ -196,25 +197,26 @@ begin
 
               // writeln(_click_cell_type, '=', _click_lvl_cell.GetType, '  ', _click_lvl_cell.X, ',', _click_lvl_cell.Y);
 
-              if (CheckLevelMapChange(_click_lvl_cell.GetType, _click_cell_type, _gold_n)) then
+              if CheckLevelMapChange(_click_lvl_cell.GetType, _click_cell_type, _gold_n) then
                 begin
                   if AddGold(_click_lvl_cell.GetType, _click_cell_type, _gold_n) then
                     _gold_n := _gold_n + 1
                   else if RemGold(_click_lvl_cell.GetType, _click_cell_type, _gold_n) then
                     _gold_n := _gold_n - 1;
 
+                  
+                  // writeln('-', _click_lvl_cell.GetType, ' -', _click_cell_type, ' -', _gold_n);
+
                   Grid_LVL.SetTypeCell(_click_lvl_cell.X, _click_lvl_cell.Y, _click_cell_type);
                   Grid_LVL.DrawCell(_click_lvl_cell.X, _click_lvl_cell.Y);
 
                   Map_OBJ.SetType(_click_lvl_cell.X, _click_lvl_cell.Y, _click_cell_type);
 
-                  // _gold_n_pre := _gold_n;
-                  // writeln(_gold_n, ' ', _click_lvl_cell.GetType, '-', _click_cell_type);
                 end;
 
             end;
 
-          if Map_OBJ.Click(MyMouse.X, MyMouse.Y) then
+          if Map_OBJ.IsClick(MyMouse.X, MyMouse.Y) then
             begin
               _slvl := Map_OBJ.SelectLevel(MyMouse.X, MyMouse.Y);
               writeln(_slvl);
@@ -235,6 +237,19 @@ begin
     prev_mouse_lb := MyMouse.Btn;
     prev_mouse_rb := MyMouse.Btn;
     
+    if KeyPressed then
+      begin
+        kkey := ReadKey;
+
+        if chr(kkey) = 'g' then
+          SetGray
+        else if chr(kkey) = 'n' then
+          SetNormal
+        else if chr(kkey) = 'N' then
+          SetNormal2;
+
+      end;
+
   //until (KeyPressed);
   until (6 > 7);
 

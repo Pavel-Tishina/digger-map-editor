@@ -11,28 +11,24 @@ uses
 
 type
   Level = class
-  public
     _lvl: array[0..14, 0..9] of CellType;
 
     constructor Init;
     
     procedure SetType(x, y: Byte; t: CellType);
     function GetType(x, y: Byte): CellType;
-
-    // destructor Destroy;
-
   end;
 
   /// LevelMap ///
 
 type
-  LevelMap = class
+  LevelMap = class(TGUI)
     const
-      _xm : Byte = 16;
-      _ym : Byte = 11;
+      _xm_c   : Byte = 16;
+      _ym_c   : Byte = 11;
+      _lvl_n  : Byte = 8;
 
     var
-      _xpos, _ypos: Word;
       _active: Byte;
       _levels: array[0..7] of Level;
 
@@ -44,13 +40,9 @@ type
     procedure SetType(x, y: Byte; t: CellType);
     procedure SetActive(n: Byte);
 
-    function Click(x, y: Word): Boolean;
     function SelectLevel(x, y: Word): Byte;
     
     function GetLevel(n : Byte): Level;
-
-    // destructor Destroy;
-    
   end;
 
     
@@ -72,8 +64,7 @@ implementation
 
   procedure Level.SetType(x, y: Byte; t: CellType);
     begin
-      if btwn(x, 0, 15) AND btwn(y, 0, 9) then
-        _lvl[x, y] := t;
+      if btwn(x, 0, 15) AND btwn(y, 0, 9) then _lvl[x, y] := t;
     end;
 
   
@@ -89,94 +80,86 @@ implementation
 
     constructor LevelMap.Init(xpos, ypos: Word);
     var
-      n, c : Byte;
+      _FN, _FC : Byte;
+      _FX : Word;
 
     begin
-      _xpos := xpos;
-      _ypos := ypos;
+      _x := xpos;
+      _y := ypos;
+      _xm := xpos + (_lvl_n * _xm_c);
+      _ym := ypos + _ym_c;
 
       _active := 0;
 
-      for n := 0 to 7 do
+      for _FN := 0 to _lvl_n - 1 do
         begin
-          _levels[n] := Level.Init;
-          if n = _active then
-            c := 15
+          _levels[_FN] := Level.Init;
+          if _FN = _active then
+            _FC := 15
           else
-            c := 7;
+            _FC := 7;
         
-        FilledRectangle(_xpos + (_xm * n), _ypos, _xpos + _xm + (_xm * n), _ypos + _ym, c, 10);
-      end;
+          _FX := _x + (_xm_c * _FN);
+          FilledRectangle(_FX, _y, _FX + _xm_c, _ym, _FC, 10);
+        end;
 
     end;
 
     procedure LevelMap.Draw;
     var
-      n: Byte;
+      __n: Byte;
 
     begin
-      for n := 0 to 7 do
-        DrawLvl(n);
-        
+      for __n := 0 to 7 do
+        DrawLvl(__n);   
     end;
 
     procedure LevelMap.DrawLvl(n: Byte);
     var
-      x, y : Byte;
-      _coord : Word;
+      _FX, _FY : Byte;
+      _FCY : Word;
     
     begin
-      for y := 0 to 9 do
+      for _FY := 0 to 9 do
         begin
-          _coord := LineOffset[_ypos + 1 + y];
+          _FCY := LineOffset[_y + 1 + _FY];
           
-          for x := 0 to 14 do
-            PutPixelOffset(_coord + _xpos + 1 + (_xm * n) + x, CellTypeMapPixel(_levels[n].GetType(x, y)));  
+          for _FX := 0 to 14 do
+            PutPixelOffset(_FCY + _x + 1 + (_xm_c * n) + _FX, CellTypeMapPixel(_levels[n].GetType(_FX, _FY)));  
 
         end;
     end;    
 
     procedure LevelMap.SetType(x, y: Byte; t: CellType);
     begin
-      if (btwn(x, 0, 14) AND btwn(y, 0, 9) AND (_levels[_active].GetType(x, y) <> t)) then
-        begin
-          _levels[_active].SetType(x, y, t);
-          PutPixelOffset(LineOffset[_ypos + 1 + y] + _xpos + 1 + (_xm * _active) + x, CellTypeMapPixel(t));
-        end; 
+      if (_levels[_active].GetType(x, y) <> t) then exit;
+
+      _levels[_active].SetType(x, y, t);
+      PutPixelOffset(LineOffset[_y + 1 + y] + _x + 1 + (_xm_c * _active) + x, CellTypeMapPixel(t)); 
     end;
 
     procedure LevelMap.SetActive(n: Byte);
     begin
-      if btwn(n, 0, 7) then
-        begin
-          Rectangle(_xpos + (_xm * _active), _ypos, _xpos + (_xm * _active) + _xm, _ypos + _ym, 7);
-          Rectangle(_xpos + (_xm * n), _ypos, _xpos + (_xm * n) + _xm, _ypos + _ym, 15);
-          _active := n;
-        end;
-    end;
+      if NOT btwn(n, 0, 7) then exit;
 
-    function LevelMap.Click(x, y: Word): Boolean;
-    begin
-      Click := btwn(x, _xpos, _xpos + (_xm * 8)) and btwn(y, _ypos, _ypos + _ym);
+      Rectangle(_x + (_xm_c * _active), _y, _x + (_xm_c * _active) + _xm_c, _ym, 7);
+      Rectangle(_x + (_xm_c * n), _y, _x + (_xm_c * n) + _xm_c, _ym, 15);
+      _active := n;
     end;
 
     function LevelMap.SelectLevel(x, y: Word): Byte;
     var
-      n : Byte;
+      _FN : Byte;
 
     begin
-      if Click(x, y) then
-        begin
-          for n := 0 to 8 do
-            if btwn(x, _xpos, _xpos + (_xm * n)) then // i += _xm ?
-              begin
-                Result := n - 1;
-                break;
-              end;    
-        end
-
-        else
-          Result := 255;
+      if NOT IsClick(x, y) then exit(255);
+        
+      for _FN := 0 to 8 do
+        if btwn(x, _x, _x + (_xm_c * _FN)) then // i += _xm ?
+          begin
+            Result := _FN - 1;
+            break;
+          end;
     end;    
 
     function LevelMap.GetLevel(n : Byte): Level;

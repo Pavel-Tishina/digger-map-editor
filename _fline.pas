@@ -15,7 +15,6 @@ uses
       _v_line         : Byte = 14;
 
     var
-      _x, _y : Word;
       _file_name : ShortString[12];
 
     constructor Create(x, y: Word; file_name: ShortString[12]);
@@ -24,7 +23,6 @@ uses
     procedure Select(isSelect: Boolean);
     procedure SetName(f_name: ShortString[12]);
     function GetName: ShortString[12];
-    function IsClick(x, y: Word): Boolean;
 
   end;
 
@@ -36,14 +34,9 @@ implementation
     begin
       _x := x;
       _y := y;
+      _xm := x + _x_line;
+      _ym := y + _v_line;
       _file_name := file_name;
-    end;
-
-  // // // // // // // // //
-
-  function TFileLine.IsClick(x, y: Word): Boolean;
-    begin
-      Result := btwn(x, _x, _x + _x_line) and btwn(y, _y, _y + _v_line);
     end;
 
   // // // // // // // // //  

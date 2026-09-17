@@ -12,13 +12,13 @@ type
 
 
 type
-  LevelGrid = class
+  LevelGrid = class(TGUI)
     const
       _grid_size: Byte = 17;
 
     var
       _xn, _yn: Byte; 
-      _offset, _x, _y: Word;
+      _offset: Word;
       _cells: Cells;
 
     constructor Init(xpos, ypos: Word; xc, yc: Byte);
@@ -30,7 +30,6 @@ type
     function GetTypeCell(x, y: Byte): CellType;
     procedure SetTypeCell(x, y: Byte; t: CellType);
 
-    function Click(x, y: Word): Boolean;
     function GetClickedCell(x, y: Word): LevelCell;
 
     function GetCellCoord(mouse_coord, start_coord: Word; lim : Byte): Byte;
@@ -54,14 +53,16 @@ implementation
     begin
       _x := xpos;
       _y := ypos;
-
+      
       _xn := xc - 1;
       _yn := yc - 1;
 
-      // _cells := [0.. _xn, 0.._yn] of LevelCell;
+      _xm := xpos + (xc * _grid_size);
+      _ym := ypos + (yc * _grid_size);
+
+      writeln(_x, ' ', _y, ' ', _xm, ' ', _ym);
 
       setLength(_cells, xc, yc);
-
 
       for Y :=0 to _yn do
       begin
@@ -112,28 +113,20 @@ implementation
         Result := CellType.Error;
     end;
 
-    /// /// /// /// /// ///    
-
-  function LevelGrid.Click(x, y: Word): Boolean;
-    begin
-      Click := (btwn(x, _x, _x + Word((_xn + 1) * _grid_size))) AND (btwn(y, _y, _y + Word((_yn + 1) * _grid_size)));
-    end;
-
     /// /// /// /// /// ///
 
   function LevelGrid.GetClickedCell(x, y: Word): LevelCell;
     var _xxx, _yyy: Byte;
 
     begin
-      if (Click(x, y) = true) then
-        begin
-          _xxx := GetCellCoord(x, _x, _xn);
-          _yyy := GetCellCoord(y, _y, _yn);
-          GetClickedCell := _cells[_xxx, _yyy];
+      // if NOT IsClick(x, y) then
+      //   exit(LevelCell.Init(0, 0, 0, 0, CellType.Error));
+      
+      _xxx := GetCellCoord(x, _x, _xn);
+      _yyy := GetCellCoord(y, _y, _yn);
+      writeln('xxx ', _xxx, ' --- yyy ', _yyy);
+      Result := _cells[_xxx, _yyy];
 
-        end
-      else
-        GetClickedCell := LevelCell.Init(0, 0, 0, 0, CellType.Error); // HOW TO DO NULL?
     end;  
 
     /// /// /// /// /// ///
@@ -144,6 +137,7 @@ implementation
 
     begin
       _lvl_cell := GetClickedCell(x, y);
+      writeln(_lvl_cell.GetType);
 
       if (_lvl_cell.GetType <> CellType.Error) then
         GetClickedCellType := _lvl_cell.GetType;

@@ -10,14 +10,13 @@ uses
 type
   TFileArray = array of TFileLine;          
 
-TFileList = class
+TFileList = class(TGUI)
     const
       _files_frame : Byte = 10;   // files in frame 
       _elem_btw    : Byte = 16;   // from Y to Y diff elements
       _scroll_x    : Byte = 116;  // margin scroll from left
     
     var
-      _x, _y, _xm, _ym : Word;
       _files : array of ShortString[12];
       _lines : TFileArray;
       _scroll : TFileScroll;
@@ -31,15 +30,9 @@ TFileList = class
     procedure SelectFile(x, y: Word);
     procedure RefreshList;
 
-    function IsClick(x, y: Word): Boolean;
     function GetSelected: ShortString[12];
 
     procedure Action(x, y: Word);
-
-    function X: Word;
-    function Y: Word;
-    function XM: Word;
-    function YM: Word;
   end;
 
 implementation
@@ -50,42 +43,42 @@ implementation
       __l : Byte;
     begin
       __n := CountLVLFiles('\MAPS\'#0);
-      
-      if __n > 0 then
+
+      if __n = 0 then
         begin
-          _x := x;
-          _y := y;
+          _s := -1;
+          exit;
+        end;
 
-          setLength(_files, __n);
-          FindFiles('\MAPS\'#0, @_files, __n);
+      _x := x;
+      _y := y;
 
-          _s := 0;
-          if __n > _max_files then
-            begin
-              _xm := _x + _scroll_xm + 22;
-              __l := _max_files;
-              _scroll := TFileScroll.Create(_x + _scroll_xm, _y);
-              // _scroll.Draw;
-            end;
-          else
-            begin
-              _xm := _x + _scroll_xm;
-              __l := __n;
-            end;
+      setLength(_files, __n);
+      FindFiles('\MAPS\'#0, @_files, __n);
 
-          setLength(_f_lines, __l);
-
-          __y := _y;
-          for __n := 0 to __l - 1 do
-            begin
-              _f_lines[__n] := TFileLine.Create(_x, __y, _files[__n]);
-              // _f_lines[__n].Draw;
-              inc(__y, _elem_btw);
-            end;
+      _s := 0;
+      if __n > _max_files then
+        begin
+          _xm := _x + _scroll_xm + 22;
+          __l := _max_files;
+          _scroll := TFileScroll.Create(_x + _scroll_xm, _y);
+          // _scroll.Draw;
         end
-
       else
-        _s := -1;
+        begin
+          _xm := _x + _scroll_xm;
+          __l := __n;
+        end;
+
+      setLength(_f_lines, __l);
+
+      __y := _y;
+      for __n := 0 to __l - 1 do
+        begin
+          _f_lines[__n] := TFileLine.Create(_x, __y, _files[__n]);
+          // _f_lines[__n].Draw;
+          inc(__y, _elem_btw);
+        end;
       
       _p := 0;
     end;
@@ -159,13 +152,6 @@ implementation
 
   // // // // // // // //
 
-  function TFileListObj.IsClick(x, y: Word): Boolean;
-    begin
-      Result := btwn(x, _x, _xm) and btwn(y, _y, _ym);
-    end;
-
-  // // // // // // // //
-
   function TFileListObj.GetSelected: ShortString[12];
     begin
       Result := _f_lines[_s].GetName;
@@ -178,43 +164,18 @@ implementation
       __i : ShortInt;
     begin
 
-      if IsClick(x, y) then
+      if NOT IsClick(x, y) then
+        exit;
+
+      if _scroll.IsClick(x, y) then
         begin
+          __i := _scroll.Action(x, y);
+          if (__i > 0) and (__i <> _p) then
+            RefreshList(__i);
+        end
+      else
+        SelectFile(x, y);
 
-          if _scroll.IsClick(x, y) then
-            begin
-              __i := _scroll.Action(x, y);
-              if (__i > 0) and (__i <> _p) then
-                RefreshList(__i);
-
-            end
-
-            else
-              SelectFile(x, y);
-
-        end;
-    end;
-
-  // // // // // // // //
-
-  function X: Word;
-    begin
-      Result := _x;
-    end;
-
-  function Y: Word;
-    begin
-      Result := _y;
-    end;
-
-  function XM: Word;
-    begin
-      Result := _xm;
-    end;
-
-  function YM: Word;
-    begin
-      Result := _ym;
     end;
 
 

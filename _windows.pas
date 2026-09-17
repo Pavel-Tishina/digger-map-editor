@@ -14,7 +14,7 @@ type
   end;
 
 type
-  TModal = class
+  TModal = class(TGUI)
     const
       _title_tm : Byte = 5;   // title top marging
       _title_lm : Byte = 5;   // title left-right marging
@@ -30,7 +30,7 @@ type
       _file_list_ym : Byte = 168;
 
     var
-      _xw1, _yw1, _xw2, _yw2: Word;
+      // _xw1, _yw1, _xw2, _yw2: Word;
       _buttons: array of TModalButton;
       _sys_btns: array of IconButton;
       _files_list: TFileList;
@@ -48,6 +48,7 @@ type
       buttons: array of TModalButton; 
       aShow: Boolean
     );
+
     constructor Create(
       title: String; 
       text: array of String; 
@@ -64,7 +65,6 @@ type
     procedure Show;
     procedure Hide;
 
-    function IsClick(x, y: Word): Boolean;
     function WhatBtnClick(x, y: Word): Byte;
     function IsShown: Boolean;
     
@@ -146,8 +146,8 @@ implementation
           _text[_i] := text[_i];
         _wtype := wtype;
 
-        _xw1 := x1; 
-        _yw1 := y1;
+        _x := x1; 
+        _y := y1;
 
 
         if wtype <> ModalType.FileWindow then
@@ -165,26 +165,26 @@ implementation
 
 
         if wtype = ModalType.FileWindow then
-          _yw2 := _yw2 + _file_list_ym
+          _ym := _y + _file_list_ym
         
         else if (x2 = 0) AND (y2 = 0) then
           begin
-            _xw2 := _max_xl;
+            _xm := _max_xl;
             _max_yl := y1 + _txt_tm + (length(text) * _txt_btwm) + _btns_bm + 14;
-            _yw2 := _max_yl;
+            _ym := _max_yl;
           end
         else
           begin
             if _max_xl > x2 then
-              _xw2 := _max_xl
+              _xm := _max_xl
             else
-              _xw2 := x2;
+              _xm := x2;
 
             _max_yl := y1 + _txt_tm + (length(text) * _txt_btwm) + _txt_bm + 10 + _btns_bm + 14;
             if _max_yl > y2 then
-              _yw2 := _max_yl
+              _ym := _max_yl
             else
-              _yw2 := y2;
+              _ym := y2;
           end;
 
 
@@ -203,27 +203,16 @@ implementation
 
     // // // // // // // // // // //
 
-    function TModal.IsClick(x, y: Word): Boolean;
-      begin
-        Result := btwn(x, _xw1, _xw2) and btwn(y, _yw1, _yw2);
-      end;
-
-    // // // // // // // // // // //
-
     function TModal.WhatBtnClick(x, y: Word): Byte;
       var
         _i : Byte;
 
       begin
-        Result := 255;
+        if NOT IsClick(x, y) then exit(255);
 
-        if IsClick(x, y) then
-          for _i := 0 to length(_buttons) - 1 do
-            if _buttons[_i].IsClick(x, y) then
-              begin
-                Result := _i;
-                break;
-              end;
+        for _i := 0 to length(_buttons) - 1 do
+          if _buttons[_i].IsClick(x, y) then
+            exit(_i);
       end;
 
     // // // // // // // // // // //
@@ -257,9 +246,9 @@ implementation
         _xi, _yi: Word;
 
       begin
-        for _yi := _yw1 to _yw2 do
-          for _xi := _xw1 to _xw2 do
-            PutPixelOffset(LineOffset[_yi] + _xi, _bkg_area[_xi - _xw1, _yi - _yw1]);
+        for _yi := _y to _ym do
+          for _xi := _x to _xm do
+            PutPixelOffset(LineOffset[_yi] + _xi, _bkg_area[_xi - _xm, _yi - _ym]);
 
         setLength(_bkg_area, 0);
       end;
@@ -272,22 +261,22 @@ implementation
         _i: Byte;
 
       begin
-        setLength(_bkg_area, _xw2 - _xw1 + 1, _yw2 - _yw1 + 1);
+        setLength(_bkg_area, _xm - _x + 1, _ym - _y + 1);
 
-        for _yi := _yw1 to _yw2 do
-          for _xi := _xw1 to _xw2 do
-            _bkg_area[_xi - _xw1, _yi - _yw1] := GetPixelOffset(LineOffset[_yi] + _xi);
+        for _yi := _y to _ym do
+          for _xi := _x to _xm do
+            _bkg_area[_xi - _x, _yi - _y] := GetPixelOffset(LineOffset[_yi] + _xi);
 
-        FilledRectangle(_xw1, _yw1, _xw2, _yw2, 0, 8);
+        FilledRectangle(_x, _y, _xm, _ym, 0, 8);
 
-        _xi := (((_xw2 - _xw1) div 2) - ((length(_title) * 8) div 2));
-        _yi := _yw1 + _title_tm;
-        DrawString(_xw1 + _xi, _yi, _title);
-        Line(_xw1 + _xi + 1, _yi + 9, _xw2 - _xi, _yi + 9, 6);
-        Line(_xw1 + _xi, _yi + 10, _xw2 - _xi, _yi + 10, 12);
+        _xi := (((_xm - _x) div 2) - ((length(_title) * 8) div 2));
+        _yi := _ym + _title_tm;
+        DrawString(_x + _xi, _yi, _title);
+        Line(_x + _xi + 1, _yi + 9, _xm - _xi, _yi + 9, 6);
+        Line(_x + _xi, _yi + 10, _xm - _xi, _yi + 10, 12);
 
-        _xi := _xw1 + _txt_lm;
-        _yi := _yw1 + _txt_tm;
+        _xi := _x + _txt_lm;
+        _yi := _y + _txt_tm;
         for _i := 0 to length(_text) - 1 do
           begin
             DrawString(_xi, _yi, _text[_i]);
@@ -300,5 +289,9 @@ implementation
       end;
     
      // // // // // // // // // // //
+
+    function WindowAction(x, y: Word): TWindowResult;
+      begin
+      end; 
      
 end.
