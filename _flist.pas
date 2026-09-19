@@ -45,6 +45,7 @@ implementation
       __l : Byte;
     begin
       __n := CountLVLFiles('\MAPS\'#0);
+      writeln(__n);
 
       if __n = 0 then
         begin
@@ -64,7 +65,6 @@ implementation
           _xm := _x + _scroll_xm + 22;
           __l := _files_frame;
           _scroll := TFileScroll.Create(_x + _scroll_xm, _y, __n);
-          // _scroll.Draw;
         end
       else
         begin
@@ -73,16 +73,19 @@ implementation
         end;
 
       setLength(_f_lines, __l);
+      writeln(length(_files));
 
       __y := _y;
       for __n := 0 to __l - 1 do
         begin
+          
           _f_lines[__n] := TFileLine.Create(_x, __y, _files[__n]);
-          // _f_lines[__n].Draw;
           inc(__y, _elem_btw);
+          
         end;
       
       _p := 0;
+      writeln(_s);
     end;
 
   // // // // // // // //
@@ -93,8 +96,8 @@ implementation
         begin
           DrawList;
 
-          if (length(_files) > _files_frame) then
-            _scroll.Draw;
+          // if (length(_files) > _files_frame) then
+          //   _scroll.Draw;
         end;
     end;
 

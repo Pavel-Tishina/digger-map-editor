@@ -7,12 +7,6 @@ interface
 uses
   _ag, _types, _font, _util, draw, _ibtn, _mbtn, io, _flist;
 
-// type
-//   TFileList = record
-//     name: String[12];
-//     size: LongInt;
-//   end;
-
 type
   TModal = class(TGUI)
     const
@@ -30,7 +24,6 @@ type
       _file_list_ym : Byte = 168;
 
     var
-      // _xw1, _yw1, _xw2, _yw2: Word;
       _buttons: array of TModalButton;
       _sys_btns: array of IconButton;
       _files_list: TFileListObj;
@@ -39,14 +32,13 @@ type
 
       _title: String;
       _text: array of String;
+      _close_after : Boolean;
 
     constructor Create(
       title: String; 
       text: array of String; 
       x1, y1, x2, y2: Word; 
-      wtype: ModalType;
-      buttons: array of TModalButton; 
-      aShow: Boolean
+      wtype: ModalType
     );
 
     constructor Create(
@@ -65,11 +57,10 @@ type
     procedure Show;
     procedure Hide;
 
-    function WhatBtnClick(x, y: Word): Byte;
     function IsShown: Boolean;
     
+    function WhatBtnClick(x, y: Word): Byte;
     function WhatFileNameChoosed(x, y: Word): ShortString;
-    // function WhatFileNameGet(x, y: Word): ShortString;
 
     function WindowAction(x, y: Word): TWindowResult;
   end;
@@ -77,6 +68,12 @@ type
 implementation
 
     procedure TModal.InitElements(wtype: ModalType);
+      const
+        _OKAY   : ShortString = 'OKAY';
+        _YES    : ShortString = 'YES';
+        _NO     : ShortString = 'NO';
+        _btn_x  : Byte = 38;
+
       var
         _xx, _yy : Word;
 
@@ -92,23 +89,27 @@ implementation
               setLength(_sys_btns, 2);
               _sys_btns[0] := IconButton.Init(_xm - _file_list_m, _y + _file_list_m, IconButtonType.Cross);
               _sys_btns[1] := IconButton.Init(_xm - _file_list_m, _ym - _file_list_m, IconButtonType.Load);
-              // break;
             end;
 
           ModalType.YesNoWindow:
             begin
+              // writeln(_x, ' ', _xm);
               setLength(_buttons, 2);
-              _buttons[0] := TModalButton.Create(_x + _xx, _yy, 32, 'YES');
-              _buttons[1] := TModalButton.Create(_xm - _xx, _yy, 32, 'NO');
-              // break;
+
+              _buttons[0] := TModalButton.Create(_x + _xx - (_btn_x div 2), _yy, _btn_x, _YES);
+              _buttons[1] := TModalButton.Create(_xm - _xx - (_btn_x div 2), _yy, _btn_x, _NO);
+              
+              if _xm < _xx then
+                _xm := _xx;
+
             end;
 
           ModalType.SimpleWindow:
             begin
               setLength(_buttons, 1);
-              _buttons[0] := TModalButton.Create((_xm - _x) div 2, _yy, 32, 'OKAY');
-              // break;
+              _buttons[0] := TModalButton.Create((_xm - _x) div 2, _yy, _btn_x, _OKAY);
             end;
+
         end;
       end;
 
@@ -119,7 +120,7 @@ implementation
       wtype: ModalType
     );
       begin
-        Create('', [''], x1, y1, 0, 0, wtype, [], false);
+        Create('', [''], x1, y1, 0, 0, wtype);
       end;
 
     // // // // // // // // // // //
@@ -131,7 +132,7 @@ implementation
       wtype: ModalType
     );
       begin
-        Create(title, text, x1, y1, 0, 0, wtype, [], false);
+        Create(title, text, x1, y1, 0, 0, wtype);
       end;
 
     // // // // // // // // // // //
@@ -139,15 +140,14 @@ implementation
     constructor TModal.Create(
       title: String; text: array of String; 
       x1, y1, x2, y2: Word; 
-      wtype: ModalType;
-      buttons: array of TModalButton; 
-      aShow: Boolean
+      wtype: ModalType
     );
       var
         _max_xl, _max_yl, _n : Word;
         _i : Word;
 
       begin
+        _close_after := false;
         _title := title;
         setLength(_text, length(text));
         for _i := 0 to length(text) - 1 do
@@ -163,9 +163,9 @@ implementation
           x1 + _file_list_xm
         );
 
-        for _i := 0 to length(text) - 1 do
+        for _i := 1 to length(text) do
           begin
-            _n := x1 + length(text[_i]) * 8 + (_title_lm * 2);
+            _n := x1 + (length(text[_i]) * 8) + (_title_lm * 2);
             if _n > _max_xl then
               _max_xl := _n;
           end;
@@ -183,24 +183,12 @@ implementation
         else
           begin
             _xm := specialize IfElse<Word>(_max_xl > x2, _max_xl, x2);
-
             _max_yl := y1 + _txt_tm + (length(text) * _txt_btwm) + _txt_bm + 10 + _btns_bm + 14;
-
             _ym := specialize IfElse<Word>(_max_yl > y2, _max_yl, y2);
           end;
 
 
-        if length(buttons) > 0 then
-          begin
-            setLength(_buttons, length(buttons));
-            for _i := 0 to length(buttons) - 1 do
-              _buttons[_i] := buttons[_i];
-          end
-        else
-          InitElements(wtype);
-
-        if aShow then
-          Show;
+        InitElements(wtype);
       end;
 
     // // // // // // // // // // //
@@ -228,33 +216,10 @@ implementation
         _files_list.Action(x, y); // not completed
 
         if _sys_btns[1].IsClick(x, y) then
-          Result := _files_list.GetSelected;
+          Result := _files_list.GetSelected
+        else if _sys_btns[0].IsClick(x, y) then
+          _close_after := true;
       end;
-
-     // // // // // // // // // // //
-
-    // function TModal.WhatFileNameGet(x, y: Word): ShortString;
-    //   var
-    //     _i : Byte;
-    //     _c : Char;
-
-    //   begin
-    //     if (NOT IsClick(x, y)) OR (_buttons[1].IsClick(x, y)) then
-    //       exit('');
-
-    //     repeat
-    //       if _files_list.IsClick(x, y) then
-    //         _files_list.Action;
-
-    //       _i = WhatBtnClick(x, y);
-    //     until _i = 255;
-
-    //     if _i = 0 then
-    //       exit(_file_name.GetName)
-    //     else
-    //       exit('');
-        
-    //   end;
 
      // // // // // // // // // // //
 
@@ -267,12 +232,15 @@ implementation
 
     procedure TModal.Hide;
       var
-        _xi, _yi: Word;
+        _xi, _yi, _yc: Word;
 
       begin
         for _yi := _y to _ym do
-          for _xi := _x to _xm do
-            PutPixelOffset(LineOffset[_yi] + _xi, _bkg_area[_xm - _xi, _ym - _yi]);
+          begin
+            _yc := _yi - _y;
+            for _xi := _x to _xm do
+              PutPixelOffset(LineOffset[_yi] + _xi, _bkg_area[_xi - _x, _yc]);
+          end;
 
         setLength(_bkg_area, 0);
       end;
@@ -281,64 +249,83 @@ implementation
 
     procedure TModal.Show;
       var
-        _xi, _yi: Word;
+        _xi, _yi, _yc: Word;
         _i: Byte;
 
       begin
-        setLength(_bkg_area, _xm - _x + 1, _ym - _y + 1);
+        setLength(_bkg_area, _xm - _x, _ym - _y);
 
         for _yi := _y to _ym do
-          for _xi := _x to _xm do
-            _bkg_area[_xi - _x, _yi - _y] := GetPixelOffset(LineOffset[_yi] + _xi);
+          begin
+            _yc := _yi - _y;
+            for _xi := _x to _xm do
+              _bkg_area[_xi - _x, _yc] := GetPixelOffset(LineOffset[_yi] + _xi);
+          end;
 
         FilledRectangle(_x, _y, _xm, _ym, 0, 8);
 
-        _xi := (((_xm - _x) div 2) - ((length(_title) * 8) div 2));
-        _yi := _ym + _title_tm;
-        DrawString(_x + _xi, _yi, _title);
-        Line(_x + _xi + 1, _yi + 9, _xm - _xi, _yi + 9, 6);
-        Line(_x + _xi, _yi + 10, _xm - _xi, _yi + 10, 12);
-
-        _xi := _x + _txt_lm;
-        _yi := _y + _txt_tm;
-        for _i := 0 to length(_text) - 1 do
+        if _wtype <> ModalType.FileWindow then
           begin
-            DrawString(_xi, _yi, _text[_i]);
-            inc(_yi, _txt_btwm);
+            _xi := (((_xm - _x) div 2) - ((length(_title) * 8) div 2));
+            _yi := _y + _title_tm;
+            DrawString(_x + _xi, _yi, _title);
+            Line(_x + _xi + 1, _yi + 9, _xm - _xi, _yi + 9, 6);
+            Line(_x + _xi, _yi + 10, _xm - _xi, _yi + 10, 12);
+
+            _xi := _x + _txt_lm;
+            _yi := _y + _txt_tm;
+
+            for _i := 0 to length(_text) - 1 do
+              begin
+                DrawString(_xi, _yi, _text[_i]);
+                inc(_yi, _txt_btwm);
+              end;
+            
+            for _i := 0 to length(_buttons) - 1 do
+              _buttons[_i].Draw;
+          end
+        else
+          begin
+            _files_list.Draw;
+
+            for _i := 0 to length(_sys_btns) - 1 do
+              _sys_btns[_i].Draw;
           end;
 
-        for _i := 0 to length(_buttons) - 1 do
-          _buttons[_i].Draw;
-
+        
       end;
     
      // // // // // // // // // // //
 
     function TModal.WindowAction(x, y: Word): TWindowResult;
       var
-        _r : TWindowResult;
+        _r  : TWindowResult;
 
       begin
-        // (FileWindow, FileNameWindow, ChoiseWindow, YesNoWindow, SimpleWindow);
         case _wtype of
-          FileWindow: 
+          ModalType.FileWindow: 
             begin
               _r.Kind := rtShortString;
               _r.S := WhatFileNameChoosed(x, y);
-              // break;
+              if _close_after then
+                begin
+                  Hide;
+                  _close_after := false;
+                end;
             end;
 
-          YesNoWindow:
+          ModalType.YesNoWindow:
             begin
               _r.Kind := rtBoolean;
               _r.B := WhatBtnClick(x, y) = 0;
-              // break;
+              Hide;
             end;
           
-          SimpleWindow:
+          ModalType.SimpleWindow:
             begin
               _r.Kind := rtBoolean;
               _r.B := False;
+              Hide;
             end;
         end;
 

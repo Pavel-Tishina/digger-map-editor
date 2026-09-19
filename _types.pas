@@ -24,12 +24,20 @@ type
 type
   TResultType = (rtBoolean, rtShortString, rtWord);
 
-TWindowResult = packed record
-  case Kind: TResultType of
-    rtBoolean:     (B: Boolean);
-    rtShortString: (S: ShortString);
-    rtWord:        (W: Word);
-end;
+  TWindowResult = packed record
+    case Kind: TResultType of
+      rtBoolean:     (B: Boolean);
+      rtShortString: (S: ShortString);
+      rtWord:        (W: Word);
+    end;
+
+type
+  TWindowCloseResult = record
+    _close: Boolean;
+    _fname: ShortString;
+    _btn_n: Byte;
+  end;
+
 
 TGUI = class
   _x, _y, _xm, _ym: Word;

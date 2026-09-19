@@ -279,11 +279,11 @@ implementation
             inc di
             mov byte ptr [di], '.'
             inc di
-            mov byte ptr [di], 'L'
+            mov byte ptr [di], 'P'
             inc di
-            mov byte ptr [di], 'V'
+            mov byte ptr [di], 'I'
             inc di
-            mov byte ptr [di], 'L'
+            mov byte ptr [di], 'C'
             inc di
             mov byte ptr [di], 0
 
@@ -342,11 +342,11 @@ implementation
             inc di
             mov byte ptr [di], '.'
             inc di
-            mov byte ptr [di], 'L'
+            mov byte ptr [di], 'P'
             inc di
-            mov byte ptr [di], 'V'
+            mov byte ptr [di], 'I'
             inc di
-            mov byte ptr [di], 'L'
+            mov byte ptr [di], 'C'
             inc di
             mov byte ptr [di], 0
 

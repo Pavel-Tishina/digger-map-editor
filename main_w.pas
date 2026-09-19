@@ -1,7 +1,7 @@
 program main_ag;
 
 uses
-  _fline, _ibtn, video, _mouse, _util, _types, draw, _windows;
+  _fline, _ibtn, video, _mouse, _util, _types, draw, _windows, _flist;
 
 var
   c, prev_mouse_lb, prev_mouse_rb : Byte;
@@ -10,7 +10,8 @@ var
   E_BTN : IconButton;
   mouseOldX, mouseOldY, o : Word;
 
-  YES_NO_MODAL, FILE_MODAL, SIMPLE_MODAL : TModal;
+  // YES_NO_MODAL, FILE_MODAL, SIMPLE_MODAL : TModal;
+  FLIST : TFileListObj;
 
 begin
   _exit := false;
@@ -28,17 +29,13 @@ begin
   for o := 0 to 64000 do
     begin
       if (o mod 11 = 0) then
-        c := 14
+        PutPixelOffset(o, 14)
       else if (o mod 9 = 0) then
-        c := 3
+        PutPixelOffset(o, 3)
       else if (o mod 7 = 0) then
-        c := 2
+        PutPixelOffset(o, 2)
       else if (o mod 3 = 0) then
-        c := 1
-      else
-        c := 0;
-      
-      PutPixelOffset(o, c);
+        PutPixelOffset(o, 1)
     end;
 
 
@@ -56,8 +53,14 @@ begin
   FLINE := TFileLine.Create(5, 5, '');
   FLINE.Draw;
 
-  YES_NO_MODAL := TModal.Create('My First Yes-No', ['Who are you?'], 100, 100, ModalType.YesNoWindow);
-  YES_NO_MODAL.Show;
+  // YES_NO_MODAL := TModal.Create('My First Yes-No', ['Who are you?'], 100, 100, ModalType.YesNoWindow);
+  // YES_NO_MODAL.Show;
+
+  // FILE_MODAL := TModal.Create(50, 50, ModalType.FileWindow);
+  // FILE_MODAL.Show;
+
+  FLIST := TFileListObj.Create(100, 50);
+  FLIST.Draw;
 
   if MouseInit then
   begin
@@ -77,6 +80,7 @@ begin
 
     if LBtnRelease(MyMouse.Btn, prev_mouse_lb) then
       begin
+        MouseHide;
         if FLINE.IsClick(MyMouse.X, MyMouse.Y) then
           begin
             MouseHide;
@@ -84,8 +88,18 @@ begin
             MouseShow;
           end;
 
+        // if YES_NO_MODAL.IsClick(MyMouse.X, MyMouse.Y) AND YES_NO_MODAL.IsShown then
+        //   begin
+        //     YES_NO_MODAL.WindowAction(MyMouse.X, MyMouse.Y);
+        //   end;
+
+        // if FILE_MODAL.IsClick(MyMouse.X, MyMouse.Y) AND FILE_MODAL.IsShown then
+        //   begin
+        //     FILE_MODAL.WindowAction(MyMouse.X, MyMouse.Y);
+        //   end;
 
         E_BTN.Click(MyMouse.X, MyMouse.Y);
+        MouseShow;
       end;
     
     prev_mouse_lb := MyMouse.Btn;
