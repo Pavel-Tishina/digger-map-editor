@@ -7,7 +7,7 @@ interface
 uses
   io, draw, _types, _util, _font;
 
-
+type
   TFileScroll = class(TGUI)
     const
       _s_line         : Byte = 4;
@@ -34,6 +34,10 @@ uses
     procedure Draw;
     procedure CubeReDraw;
     function Action(x, y: Word): ShortInt;
+
+    procedure DrawScrollButton(isUp: Boolean);
+    procedure DrawScrollButtonArrow(isUp: Boolean);
+    procedure DrawScrollLine;
   end;
 
 
@@ -65,7 +69,7 @@ implementation
       setLength(_cube_y, _n);
       _c := (_scroll_ym div _n) + 1;
       _r := _scroll_ym / _n;
-      _cube_ym := rnd((_scroll_ym / files) * _n);
+      _cube_ym := round((_scroll_ym / files) * _n);
         
       if _cube_ym <= 1 then
         _cube_ym := 2;
@@ -97,14 +101,11 @@ implementation
 
   // // // // // // // // // 
 
-  procedure DrawScrollButton(isUp: Boolean);
+  procedure TFileScroll.DrawScrollButton(isUp: Boolean);
     var
       __y : Byte;
     begin
-      if isUp then
-        __y := _scroll_ym
-      else
-        __y := 0;
+      __y := specialize IfElse<Byte>(isUp, _scroll_ym, 0);
 
       Rectangle(_x, _y + __y, _x + _l_line, _y + __y + _l_line, 7);
       Line(_x + _s_line, _y + __y, _x + _s_line + _s_line, _y + __y, 8);
@@ -115,9 +116,9 @@ implementation
 
   // // // // // // // // //    
 
-  procedure DrawScrollButtonArrow(isUp: Boolean);
+  procedure TFileScroll.DrawScrollButtonArrow(isUp: Boolean);
     var
-      _q, _i : Short;
+      _q, _i : ShortInt;
       __x, __y : Word;
 
     begin
@@ -138,9 +139,9 @@ implementation
 
   // // // // // // // // //
 
-  procedure DrawScrollLine;
+  procedure TFileScroll.DrawScrollLine;
     begin
-      FilledRectangle(_x + _s_line, _y + _l_line, _x + _s_line * 2, _y + _l_line + _scroll_ym, 0);
+      FilledRectangle(_x + _s_line, _y + _l_line, _x + _s_line * 2, _y + _l_line + _scroll_ym, 0, 0);
     end;
 
   // // // // // // // // //
@@ -150,10 +151,10 @@ implementation
     var
       __y : Byte;
     begin
-      __y := rnd(_cube_y[_pre_inx]);
+      __y := round(_cube_y[_pre_inx]);
       Rectangle(_x + _s_line + 1, __y, _x + _s_line + 2, __y + _cube_ym,  0);
 
-      __y := rnd(_cube_y[_files_pos_inx]);
+      __y := round(_cube_y[_files_pos_inx]);
       Rectangle(_x + _s_line + 1, __y, _x + _s_line + 2, __y + _cube_ym,  8);
     end;
 

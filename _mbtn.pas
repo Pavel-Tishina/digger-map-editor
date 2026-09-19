@@ -5,7 +5,7 @@ unit _mbtn;
 interface
 
 uses
-  _font, _util, draw;
+  _font, _util, draw, _types;
 
 type
   TModalButton = class(TGUI)
@@ -42,7 +42,7 @@ implementation
       begin
         Rectangle(_x, _y, _xm, _ym, 0);
         FilledRectangle(_x + 1, _y + 1, _xm - 1, _ym - 1, 8, 0);
-        DrawString((_xm - _x) div 2) - (length(_txt) * 4), _y + 3, _txt);
+        DrawString(((_xm - _x) div 2) - (length(_txt) * 4), _y + 3, _txt);
       end;
  
 end.

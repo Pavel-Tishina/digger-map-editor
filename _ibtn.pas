@@ -8,12 +8,11 @@ uses
   draw, _types, _util, io, video, _ag;
 
 type
-  IconButton = class
+  IconButton = class(TGUI)
     const
       _s : Byte = 19;
 
     var
-      _xpos, _ypos : Word;
       _t : IconButtonType;
       _img : ArchiveGraphicFile;
       _background: ByteData;
@@ -31,8 +30,10 @@ implementation
 
   constructor IconButton.Init(x, y: Word; t: IconButtonType);
     begin
-      _xpos := x;
-      _ypos := y;
+      _x := x;
+      _y := y;
+      _xm := x + _s;
+      _ym := y + _s;
       _t := t;
 
       if t <> IconButtonType.Cross then
@@ -43,7 +44,7 @@ implementation
 
   procedure IconButton.Click(x, y: Word);
     begin
-      if btwn(x, _xpos, _xpos + _s) AND btwn(y, _ypos, _ypos + _s) then
+      if IsClick(x, y) then
         case _t of
           IconButtonType.Cross,
           IconButtonType.ExitApp:
@@ -75,7 +76,7 @@ implementation
 
 
   procedure IconButton.Draw;
-    var _x, _y, _ycalc, _i: Word;
+    var _fx, _fy, _ycalc, _i: Word;
 
     begin
       if (_t <> IconButtonType.Cross) then
@@ -84,31 +85,29 @@ implementation
           setLength(_background, (_s + 1) * (_s + 1));
           
           _i := 0;
-          for _y := _ypos to _ypos + _s do
-            begin
-              _ycalc := LineOffset[_y];
-              for _x := _xpos to _xpos + _s do
-                begin
-                  _background[_i] := GetPixelOffset(_ycalc + _x);
-                  inc(_i);
-                end;
-            end;
+          for _fy := _y to _ym do
+            for _fx := _x to _xm do
+              begin
+                _background[_i] := GetPixelOffset(LineOffset[_fy] + _fx);
+                inc(_i);
+              end;
+
           
-          FilledSquare(_xpos, _ypos, _s, 7, 0);          
-          _img.Draw(_xpos + 1, _ypos + 1); // TODO !!!! Hallo! Ich habe an dieser Zeile aufgehört.
+          FilledSquare(_x, _y, _s, 7, 0);          
+          _img.Draw(_x + 1, _y + 1); // TODO !!!! Hallo! Ich habe an dieser Zeile aufgehört.
         end
 
       else
         begin
-          FilledSquare(_xpos, _ypos, _s, 7, 0);
-          Line(_xpos + 2, _ypos + 2, _xpos + _s - 2, _ypos + _s - 2, 5);
-          Line(_xpos + 2, _ypos + _s - 2, _xpos + _s - 2, _ypos + 2, 5);
+          FilledSquare(_x, _y, _s, 7, 0);
+          Line(_x + 2, _y + 2, _xm - 2, _ym - 2, 5);
+          Line(_x + 2, _ym - 2, _xm - 2, _y + 2, 5);
         end;
 
     end;
 
   procedure IconButton.Hide;
-    var _x, _y, _ycalc, _i: Word;
+    var _fx, _fy, _ycalc, _i: Word;
     
     begin
       if (_t = IconButtonType.Cross) then
@@ -117,21 +116,21 @@ implementation
       // if (_t <> IconButtonType.Cross) then
       //   begin
           _i := 0;
-          _y := _ypos;
-          _x := _xpos;
-          _ycalc := LineOffset[_ypos];
+          _fy := _y;
+          _fx := _x;
+          _ycalc := LineOffset[_y];
           while (_i < length(_background)) do
             begin
-              PutPixelOffset(_ycalc + _x, _background[_i]);
+              PutPixelOffset(_ycalc + _fx, _background[_i]);
               
-              if (_x >= _xpos + _s) then
+              if (_fx >= _xm) then
                 begin
-                  _x := _xpos;
-                  inc(_y);
-                  _ycalc := LineOffset[_y];
+                  _fx := _x;
+                  inc(_fy);
+                  _ycalc := LineOffset[_fy];
                 end
                 else
-                  inc(_x);
+                  inc(_fx);
 
               inc(_i);
             end;

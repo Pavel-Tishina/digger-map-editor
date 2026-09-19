@@ -70,10 +70,7 @@ implementation
   
   function Level.GetType(x, y: Byte): CellType;
     begin
-      if btwn(x, 0, 15) AND btwn(y, 0, 9) then
-        GetType := _lvl[x, y]
-      else
-        GetType := CellType.Error;
+      Result := specialize IfElse<CellType>(btwn(x, 0, 15) AND btwn(y, 0, 9), _lvl[x, y], CellType.Error);
     end;
 
       /// Level Impl ///
@@ -94,10 +91,7 @@ implementation
       for _FN := 0 to _lvl_n - 1 do
         begin
           _levels[_FN] := Level.Init;
-          if _FN = _active then
-            _FC := 15
-          else
-            _FC := 7;
+          _FC := specialize IfElse<Byte>(_FN = _active, 15, 7);
         
           _FX := _x + (_xm_c * _FN);
           FilledRectangle(_FX, _y, _FX + _xm_c, _ym, _FC, 10);
@@ -164,10 +158,7 @@ implementation
 
     function LevelMap.GetLevel(n : Byte): Level;
     begin
-      if btwn(n, 0, 7) then
-        GetLevel := _levels[n]
-      else
-        GetLevel := Level.Init;
+      Result := specialize IfElse<Level>(btwn(n, 0, 7), _levels[n], Level.Init);
     end;
 
 end.

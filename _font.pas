@@ -12,8 +12,8 @@ uses
 implementation
 
   const
-    _s : String[66] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?~-+''"\/()[]{}.,:;=_<>#&%^*|@';
-    _r : Byte = 8;
+    _s  : String[66] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?~-+''"\/()[]{}.,:;=_<>#&%^*|@';
+    _r  : Byte = 8;
     _xn : Byte = 21;
     _yn : Byte = 2;
 
@@ -39,15 +39,21 @@ implementation
       Result := _img_out;
     end;
 
-  procedure DrawLetter(x, y : Word; c : Char);
+  procedure DrawLetter(x, y: Word; c: Byte);
     var
       _n, _x, _y : Byte;
+      _b : Boolean;
+      _c : Char;
 
     begin
-      if (pos(c, _s) > 0) then
+      // c := UpCase(c);
+
+      if (pos(chr(c), _s) > 0) OR (pos(chr(c - 32) , _s) > 0) then
+      // if pos(chr(c), _s) > 0 then
         begin
+          _c := UpCase(chr(c));         // !!
           for _n := 1 to Length(_s) do
-            if _s[_n] = c then
+            if _s[_n] = _c then
               break;
 
           for _y := 0 to _r - 1 do
@@ -64,7 +70,7 @@ implementation
     begin
       for _i := 1 to Length(s) do
         if s[_i] <> ' ' then
-          DrawLetter(x + ((_i - 1) * _r), y, s[_i]);
+          DrawLetter(x + ((_i - 1) * _r), y, ord(s[_i]));
     end;
 
 begin

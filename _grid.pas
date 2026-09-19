@@ -107,10 +107,7 @@ implementation
 
   function LevelGrid.GetTypeCell(x, y: Byte): CellType;
     begin
-      if btwn(x, 0, _xn) AND btwn(y, 0, _yn) then
-        Result := _cells[x, y].GetType
-      else
-        Result := CellType.Error;
+      Result := specialize IfElse<CellType>(btwn(x, 0, _xn) AND btwn(y, 0, _yn), _cells[x, y].GetType, CellType.Error);
     end;
 
     /// /// /// /// /// ///

@@ -86,14 +86,14 @@ implementation
             begin
               palette[i] := r_data[n] shr 4;
               
-              i := i + 1;
+              inc(i);
               _colors := _colors - 1;
 
               if (_colors <= 0) then
                 continue;
 
               palette[i] := r_data[n] and $0F;
-              i := i + 1;
+              inc(i)
             end;
 
           //bg_color := palette[bg_color_number];
@@ -146,8 +146,7 @@ implementation
           begin
             _l := ((data[_n] shr 7) and 1);
 
-            if (_l = 0)
-            then
+            if (_l = 0) then
               begin    
                 _r := (data[_n] shr color_bits) and ((1 shl (7 - color_bits)) - 1);
               end
@@ -200,8 +199,7 @@ implementation
           begin
             _l := ((data[_n] shr 7) and 1);
 
-            if (_l = 0)
-            then
+            if (_l = 0) then
               begin    
                 _r := (data[_n] shr color_bits) and ((1 shl (7 - color_bits)) - 1);
               end

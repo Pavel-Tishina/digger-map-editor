@@ -10,15 +10,15 @@ uses
 type
   TFileArray = array of TFileLine;          
 
-TFileList = class(TGUI)
+TFileListObj = class(TGUI)
     const
       _files_frame : Byte = 10;   // files in frame 
       _elem_btw    : Byte = 16;   // from Y to Y diff elements
-      _scroll_x    : Byte = 116;  // margin scroll from left
+      _scroll_xm   : Byte = 116;  // margin scroll from left
     
     var
-      _files : array of ShortString[12];
-      _lines : TFileArray;
+      _files : array of ShortString;
+      _f_lines : TFileArray;
       _scroll : TFileScroll;
       _s : ShortInt;  // position line
       _p : Byte;      // position index
@@ -28,11 +28,13 @@ TFileList = class(TGUI)
     procedure DrawList;
 
     procedure SelectFile(x, y: Word);
-    procedure RefreshList;
+    // procedure RefreshList;
 
-    function GetSelected: ShortString[12];
+    function GetSelected: ShortString;
 
     procedure Action(x, y: Word);
+   
+    procedure RefreshList(inx: Byte);
   end;
 
 implementation
@@ -57,11 +59,11 @@ implementation
       FindFiles('\MAPS\'#0, @_files, __n);
 
       _s := 0;
-      if __n > _max_files then
+      if __n > _files_frame then
         begin
           _xm := _x + _scroll_xm + 22;
-          __l := _max_files;
-          _scroll := TFileScroll.Create(_x + _scroll_xm, _y);
+          __l := _files_frame;
+          _scroll := TFileScroll.Create(_x + _scroll_xm, _y, __n);
           // _scroll.Draw;
         end
       else
@@ -92,7 +94,7 @@ implementation
           DrawList;
 
           if (length(_files) > _files_frame) then
-            scroll.Draw;
+            _scroll.Draw;
         end;
     end;
 
@@ -117,7 +119,7 @@ implementation
     begin
       if btwn(x, _x, _xm) then
         for __i := 0 to length(_f_lines) - 1 do
-          if _f_lines.IsClick(x, y) then
+          if _f_lines[__i].IsClick(x, y) then
             begin
               _f_lines[_s].Select(false);
               _f_lines[__i].Select(true);
@@ -152,14 +154,14 @@ implementation
 
   // // // // // // // //
 
-  function TFileListObj.GetSelected: ShortString[12];
+  function TFileListObj.GetSelected: ShortString;
     begin
       Result := _f_lines[_s].GetName;
     end;
 
   // // // // // // // //
 
-  procedure Action(x, y: Word);
+  procedure TFileListObj.Action(x, y: Word);
     var
       __i : ShortInt;
     begin

@@ -429,9 +429,9 @@ implementation
 
     function ReadKey: Word; assembler;
         asm
-            xor ah,ah
+            xor ah, ah
             int 16h
-            { AX already has a result}
+            xor ah, ah          { keep only the ASCII code, result 0..255 }
         end;
 
     ////////////////////////////////////////////
