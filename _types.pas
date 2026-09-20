@@ -7,6 +7,9 @@ uses
   _util;
 
 type
+  ListOfFileNames = array of ShortString;
+
+type
   ImageData = array of array of Byte;
 
 type
@@ -19,7 +22,7 @@ type
   IconButtonType = (Load, Save, NewLvl, ExitApp, Cross);
 
 type
-  ModalType = (FileWindow, FileNameWindow, ChoiseWindow, YesNoWindow, SimpleWindow);
+  ModalType = (FileWindow, YesNoWindow, SimpleWindow);
 
 type
   TResultType = (rtBoolean, rtShortString, rtWord);

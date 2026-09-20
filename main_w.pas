@@ -10,7 +10,7 @@ var
   E_BTN : IconButton;
   mouseOldX, mouseOldY, o : Word;
 
-  // YES_NO_MODAL, FILE_MODAL, SIMPLE_MODAL : TModal;
+  YES_NO_MODAL, FILE_MODAL, SIMPLE_MODAL : TModal;
   FLIST : TFileListObj;
 
 begin
@@ -56,11 +56,11 @@ begin
   // YES_NO_MODAL := TModal.Create('My First Yes-No', ['Who are you?'], 100, 100, ModalType.YesNoWindow);
   // YES_NO_MODAL.Show;
 
-  // FILE_MODAL := TModal.Create(50, 50, ModalType.FileWindow);
-  // FILE_MODAL.Show;
+  FILE_MODAL := TModal.Create(100, 20, ModalType.FileWindow);
+  FILE_MODAL.Show;
 
-  FLIST := TFileListObj.Create(100, 50);
-  FLIST.Draw;
+  // FLIST := TFileListObj.Create(100, 20);
+  // FLIST.Draw;
 
   if MouseInit then
   begin
@@ -93,10 +93,17 @@ begin
         //     YES_NO_MODAL.WindowAction(MyMouse.X, MyMouse.Y);
         //   end;
 
-        // if FILE_MODAL.IsClick(MyMouse.X, MyMouse.Y) AND FILE_MODAL.IsShown then
+        if FILE_MODAL.IsClick(MyMouse.X, MyMouse.Y) AND FILE_MODAL.IsShown then
+          begin
+            FILE_MODAL.WindowAction(MyMouse.X, MyMouse.Y);
+          end;
+
+        // if FLIST.IsClick(MyMouse.X, MyMouse.Y) then
         //   begin
-        //     FILE_MODAL.WindowAction(MyMouse.X, MyMouse.Y);
+        //     // writeln(MyMouse.X, ' ' , MyMouse.Y);
+        //     FLIST.Action(MyMouse.X, MyMouse.Y);
         //   end;
+        
 
         E_BTN.Click(MyMouse.X, MyMouse.Y);
         MouseShow;

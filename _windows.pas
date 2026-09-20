@@ -19,9 +19,10 @@ type
       _btns_btwm: Byte = 12;
       _btns_bm  : Byte = 5;
 
-      _file_list_m  : Byte = 10;
-      _file_list_xm : Byte = 164;
-      _file_list_ym : Byte = 168;
+      _file_marging : Byte = 5;
+      _file_btn_m   : Byte = 24;
+      _file_list_xm : Byte = 165;
+      _file_list_ym : Byte = 165;
 
     var
       _buttons: array of TModalButton;
@@ -85,10 +86,10 @@ implementation
 
           ModalType.FileWindow:
             begin
-              _files_list := TFileListObj.Create(_x + _file_list_m, _y + _file_list_m);
+              _files_list := TFileListObj.Create(_x + _file_marging, _y + _file_marging);
               setLength(_sys_btns, 2);
-              _sys_btns[0] := IconButton.Init(_xm - _file_list_m, _y + _file_list_m, IconButtonType.Cross);
-              _sys_btns[1] := IconButton.Init(_xm - _file_list_m, _ym - _file_list_m, IconButtonType.Load);
+              _sys_btns[0] := IconButton.Init(_xm - _file_btn_m, _y + _file_marging, IconButtonType.Cross);
+              _sys_btns[1] := IconButton.Init(_xm - _file_btn_m, _ym - _file_btn_m, IconButtonType.Load);
             end;
 
           ModalType.YesNoWindow:
@@ -172,7 +173,10 @@ implementation
 
 
         if wtype = ModalType.FileWindow then
-          _ym := _y + _file_list_ym
+          begin
+            _xm := _x + _file_list_xm;
+            _ym := _y + _file_list_ym;
+          end
         
         else if (x2 = 0) AND (y2 = 0) then
           begin
@@ -209,16 +213,22 @@ implementation
 
     function TModal.WhatFileNameChoosed(x, y: Word): ShortString;
       begin
-        if NOT IsClick(x, y) OR _sys_btns[0].IsClick(x, y) then
+        if NOT IsClick(x, y)  then
           exit('');
 
-        Result := '';
         _files_list.Action(x, y); // not completed
+        
+        if _sys_btns[0].IsClick(x, y) then // CLOSE
+          begin
+            _close_after := true;
+            exit('');
+          end
+        else if _sys_btns[1].IsClick(x, y) then // LOAD
+          begin
+            _close_after := true;
+            exit(_files_list.GetSelected);
+          end;
 
-        if _sys_btns[1].IsClick(x, y) then
-          Result := _files_list.GetSelected
-        else if _sys_btns[0].IsClick(x, y) then
-          _close_after := true;
       end;
 
      // // // // // // // // // // //
@@ -253,8 +263,9 @@ implementation
         _i: Byte;
 
       begin
-        setLength(_bkg_area, _xm - _x, _ym - _y);
+        setLength(_bkg_area, (_xm - _x) + 1, (_ym - _y) + 1);
 
+        // !!!!!
         for _yi := _y to _ym do
           begin
             _yc := _yi - _y;
@@ -300,13 +311,22 @@ implementation
     function TModal.WindowAction(x, y: Word): TWindowResult;
       var
         _r  : TWindowResult;
+        _selected_name : ShortString;
 
       begin
+        if NOT IsShown then
+          begin
+            _r.Kind := rtBoolean;
+            _r.B := false;
+            exit(_r);
+          end;
+
         case _wtype of
           ModalType.FileWindow: 
             begin
+              _selected_name := WhatFileNameChoosed(x, y);
               _r.Kind := rtShortString;
-              _r.S := WhatFileNameChoosed(x, y);
+              _r.S := specialize IfElse<ShortString>(_close_after AND (length(_selected_name) > 0), _selected_name, '');
               if _close_after then
                 begin
                   Hide;

@@ -27,9 +27,10 @@ interface
     procedure RestoreCursorBackground(X, Y: Word);
 
 implementation
+    const
+        VideoSeg : Word = $A000;
 
     var
-        VideoSeg : Word = $A000;
         y: Word;
         CursorBack: array[0..15, 0..15] of Byte;
 
@@ -200,12 +201,21 @@ implementation
 
     procedure FilledRectangle(x1, y1, x2, y2: Word; c, cf: Byte);
         var 
-            i: Word;
+            i, yy, xx: Word;
 
         begin
             Rectangle(x1, y1, x2, y2, c);
-            for i := 1 to (abs(y1 - y2) div 2) do
-                Rectangle(x1 + i, y1 + i, x2 - i, y2 - i, cf);
+                // Buggy... 
+            // y := trunc(abs(y1 - y2) / 2);
+            // yy := abs(y1 - y2) div 2;
+            // for i := 1 to yy do
+            //   begin
+            //     Rectangle(x1 + xx, y1 + i, x2 - xx, y2 - i, cf);
+            //   end;
+
+            for yy := y1 + 1 to y2 - 1 do
+              for xx := x1 + 1 to x2 - 1 do
+                PutPixelOffset(LineOffset[yy] + xx, cf);
         end;
 
     ////////////////////////////////////////////

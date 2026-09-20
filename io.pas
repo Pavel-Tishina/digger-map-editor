@@ -1,8 +1,12 @@
 unit io;
 
 {$ASMMODE INTEL}
+{$MODE OBJFPC}
 
 interface
+
+uses
+  _types;
 
     // FILE
     function CreateFile(FileName: PChar): Word;
@@ -25,6 +29,8 @@ interface
     // array of String[12] (each element 13 bytes). Returns the number of
     // stored names.
     function FindFiles(Path: PChar; List: Pointer; MaxCount: Word): Word;
+
+    function FindFiles2(Path: ShortString): ListOfFileNames;
 
     // Returns the total number of .PIC files in directory Path.
     function CountLVLFiles(Path: PChar): Word;
@@ -248,10 +254,57 @@ implementation
         end;
 
     ////////////////////////////////////////////
+    const
+        DTA_SIZE = 43;      // DOS writes a 43-byte DTA
+    
+    type
+        TDTA = array[0..DTA_SIZE - 1] of Byte;
 
     var
         DTA_Buf: array[0..42] of Byte;
         SearchSpec: array[0..80] of Byte;
+        DirSpec: array[0..80] of Byte;
+
+    function FindFirst(Pattern: PChar; var DTA: TDTA): Word; assembler;
+      asm
+        MOV BX, DTA            // near pointer to the DTA buffer
+        PUSH DS
+        PUSH SS
+        POP DS                 // DTA may live in the stack segment
+        MOV DX, BX
+        MOV AH, $1A            // set current DTA
+        INT $21
+        POP DS                 // restore data segment
+
+        MOV AH, $4E            // Find First
+        MOV DX, Pattern        // DS:DX -> null-terminated pattern
+        MOV CX, $10            // attribute: include dirs (filtered by caller)
+        INT $21
+      end;
+
+    function FindNext(var DTA: TDTA): Word; assembler;
+      asm
+        MOV AH, $4F            // Find Next (continues with the current DTA)
+        INT $21
+      end;
+
+    function ExtractName(const DTA: TDTA): string;
+      var
+        _i: Byte;
+        _s: string;
+    
+      begin
+        _s := '';
+        for _i := 30 to 42 do      // filename (13 bytes, ASCIIZ, space padded)
+          begin
+            if (DTA[_i] = 0) or (DTA[_i] = 32) then Break;
+
+            _s := _s + Chr(DTA[_i]);
+          end;
+        ExtractName := _s;
+      end;
+
+
 
     function CountLVLFiles(Path: PChar): Word; assembler;
         asm
@@ -406,6 +459,45 @@ implementation
 
         @@Exit:
         end;
+
+    ////////////////////////////////////////////
+
+    function FindFiles2(Path: ShortString): ListOfFileNames;
+      var
+        _n, _i : Word;
+        _arr : ListOfFileNames;
+        DTA: TDTA;
+        Err: Word;
+
+      begin
+        // copy Path into a DS-resident, null-terminated buffer
+        for _i := 1 to length(Path) do
+          DirSpec[_i - 1] := Ord(Path[_i]);
+        DirSpec[length(Path)] := 0;
+
+        _n := CountLVLFiles(@DirSpec[0]);   // fills SearchSpec with Path+'*.PIC'
+        setLength(_arr, _n);
+
+        if _n <= 0 then
+          exit(_arr);
+
+        _i := 0;
+        Err := FindFirst(@SearchSpec[0], DTA);
+        if Err = 0 then
+          begin
+            repeat
+              // skip directories (attribute byte at DTA+21)
+              if (DTA[21] and $10) = 0 then
+                begin
+                  _arr[_i] := ExtractName(DTA);
+                  inc(_i);
+                end;
+              Err := FindNext(DTA);
+            until (Err <> 0) or (_i >= _n);
+          end;
+        
+        Result := _arr;
+      end;
 
     ////////////////////////////////////////////
 

@@ -99,6 +99,7 @@ implementation
         end
       else
         FilledRectangle(_x + 1, _y + 1, _xm - 1, _ym - 1, 8, 8);
+        // FilledRectangle(_x, _y, _xm, _ym, 8, 8);
 
       DrawString(_x + _inside_marging, _y + _inside_marging, _file_name);
     end;
@@ -107,7 +108,7 @@ implementation
 
   procedure TFileLine.Hide;
     begin
-      FilledRectangle(_x, _y, _x + _x_line, _y + _v_line, 0, 0);
+      FilledRectangle(_x, _y, _x + _x_line, _y + _v_line, 8, 8);
     end;
 
   // // // // // // // // //
@@ -117,7 +118,12 @@ implementation
       if isSelect then
         Rectangle(_x, _y, _x + _x_line, _y + _v_line, 15)
       else
-        Draw;
+        begin
+          // Draw;
+          Rectangle(_x, _y, _xm, _ym, 7);
+          Line(_x + _h_line, _y, _xm - _h_line, _y, 8);
+          Line(_x + _h_line, _ym, _xm - _h_line, _ym, 8);
+        end;
     end;
 
   // // // // // // // // //  

@@ -14,7 +14,7 @@ TFileListObj = class(TGUI)
     const
       _files_frame : Byte = 10;   // files in frame 
       _elem_btw    : Byte = 16;   // from Y to Y diff elements
-      _scroll_xm   : Byte = 116;  // margin scroll from left
+      _scroll_xm   : Byte = 105;  // margin scroll from left
     
     var
       _files : array of ShortString;
@@ -45,7 +45,6 @@ implementation
       __l : Byte;
     begin
       __n := CountLVLFiles('\MAPS\'#0);
-      writeln(__n);
 
       if __n = 0 then
         begin
@@ -56,8 +55,7 @@ implementation
       _x := x;
       _y := y;
 
-      setLength(_files, __n);
-      FindFiles('\MAPS\'#0, @_files, __n);
+      _files := FindFiles2('\MAPS\');
 
       _s := 0;
       if __n > _files_frame then
@@ -73,31 +71,29 @@ implementation
         end;
 
       setLength(_f_lines, __l);
-      writeln(length(_files));
 
       __y := _y;
       for __n := 0 to __l - 1 do
         begin
-          
           _f_lines[__n] := TFileLine.Create(_x, __y, _files[__n]);
           inc(__y, _elem_btw);
-          
         end;
       
+      _ym := __y;
+
       _p := 0;
-      writeln(_s);
     end;
 
   // // // // // // // //
 
   procedure TFileListObj.Draw;
     begin
-      if (_s > 0) then
+      if (_s >= 0) then
         begin
           DrawList;
 
-          // if (length(_files) > _files_frame) then
-          //   _scroll.Draw;
+          if (length(_files) > _files_frame) then
+            _scroll.Draw;
         end;
     end;
 
@@ -118,17 +114,22 @@ implementation
   procedure TFileListObj.SelectFile(x, y: Word);
     var
       __i : Byte;
+      __n, __p : Word;
 
     begin
-      if btwn(x, _x, _xm) then
-        for __i := 0 to length(_f_lines) - 1 do
-          if _f_lines[__i].IsClick(x, y) then
-            begin
-              _f_lines[_s].Select(false);
-              _f_lines[__i].Select(true);
-              _s := __i;
-              break;
-            end;
+      if NOT btwn(x, _x, _xm) then
+        exit;
+
+      __n := length(_files);
+      __p := _p * _files_frame;
+      for __i := 0 to length(_f_lines) - 1 do
+        if _f_lines[__i].IsClick(x, y) and (__p + __i < length(_files)) then
+          begin
+            _f_lines[_s].Select(false);
+            _f_lines[__i].Select(true);
+            _s := __i;
+            break;
+          end;
     end;
 
   // // // // // // // //
@@ -143,6 +144,7 @@ implementation
       for __i := 0 to length(_f_lines) - 1 do
         begin
           _f_lines[__i].Hide;
+          // writeln(__i, ' ', __j, ' ', length(_files), ' ', _files[__j]);
           if __j < length(_files) then
             begin
               _f_lines[__i].SetName(_files[__j]);
@@ -151,7 +153,9 @@ implementation
             end;
         end;
     
+      _f_lines[_s].Select(false);
       _f_lines[0].Select(true);
+      _s := 0;
       _p := inx;
     end;
 
@@ -175,7 +179,8 @@ implementation
       if _scroll.IsClick(x, y) then
         begin
           __i := _scroll.Action(x, y);
-          if (__i > 0) and (__i <> _p) then
+          // writeln(__i, '  ', _p, ' = ', (__i >= 0) and (__i <> _p));
+          if (__i >= 0) and (__i <> _p) then
             RefreshList(__i);
         end
       else
