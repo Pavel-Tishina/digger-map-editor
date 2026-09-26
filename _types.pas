@@ -41,6 +41,15 @@ type
     _btn_n: Byte;
   end;
 
+// type
+//   TMap = class
+//     _keys: array of ShortString;
+//     _vals: array of Byte;
+
+//     function Add(k: ShortString, v: Byte): Boolean;
+//     function Get(k: ShortString): Byte;
+//   end;
+
 
 TGUI = class
   _x, _y, _xm, _ym: Word;

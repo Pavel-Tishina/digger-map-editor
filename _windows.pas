@@ -34,24 +34,28 @@ type
       _title: String;
       _text: array of String;
       _close_after : Boolean;
+      _id: Byte;
 
     constructor Create(
       title: String; 
       text: array of String; 
       x1, y1, x2, y2: Word; 
-      wtype: ModalType
+      wtype: ModalType;
+      id: Byte
     );
 
     constructor Create(
       title: String; 
       text: array of String; 
       x1, y1: Word; 
-      wtype: ModalType
+      wtype: ModalType;
+      id: Byte
     );
 
     constructor Create(
       x1, y1: Word; 
-      wtype: ModalType
+      wtype: ModalType;
+      id: Byte
     );
 
     procedure InitElements(wtype: ModalType);
@@ -64,6 +68,9 @@ type
     function WhatFileNameChoosed(x, y: Word): ShortString;
 
     function WindowAction(x, y: Word): TWindowResult;
+
+    // procedure SetId(id: Byte);
+    function GetId: Byte;
   end;
 
 implementation
@@ -108,7 +115,7 @@ implementation
           ModalType.SimpleWindow:
             begin
               setLength(_buttons, 1);
-              _buttons[0] := TModalButton.Create((_xm - _x) div 2, _yy, _btn_x, _OKAY);
+              _buttons[0] := TModalButton.Create(_x + ((_xm - _x) div 2) + (_btn_x div 2), _yy, _btn_x, _OKAY);
             end;
 
         end;
@@ -118,10 +125,11 @@ implementation
 
     constructor TModal.Create(
       x1, y1: Word; 
-      wtype: ModalType
+      wtype: ModalType;
+      id: Byte
     );
       begin
-        Create('', [''], x1, y1, 0, 0, wtype);
+        Create('', [''], x1, y1, 0, 0, wtype, id);
       end;
 
     // // // // // // // // // // //
@@ -130,18 +138,21 @@ implementation
       title: String; 
       text: array of String; 
       x1, y1: Word; 
-      wtype: ModalType
+      wtype: ModalType;
+      id: Byte
     );
       begin
-        Create(title, text, x1, y1, 0, 0, wtype);
+        Create(title, text, x1, y1, 0, 0, wtype, id);
       end;
 
     // // // // // // // // // // //
 
     constructor TModal.Create(
-      title: String; text: array of String; 
+      title: String; 
+      text: array of String; 
       x1, y1, x2, y2: Word; 
-      wtype: ModalType
+      wtype: ModalType;
+      id: Byte
     );
       var
         _max_xl, _max_yl, _n : Word;
@@ -154,6 +165,7 @@ implementation
         for _i := 0 to length(text) - 1 do
           _text[_i] := text[_i];
         _wtype := wtype;
+        _id := id;
 
         _x := x1; 
         _y := y1;
@@ -164,7 +176,7 @@ implementation
           x1 + _file_list_xm
         );
 
-        for _i := 1 to length(text) do
+        for _i := 0 to length(text) - 1 do
           begin
             _n := x1 + (length(text[_i]) * 8) + (_title_lm * 2);
             if _n > _max_xl then
@@ -305,8 +317,22 @@ implementation
 
         
       end;
-    
+
+     // // // // // // // // // // //    
+
+    //  procedure TModal.SetId(id: Byte);
+    //   begin
+    //     _id := id;
+    //   end;
+
      // // // // // // // // // // //
+
+     function TModal.GetId: Byte;
+      begin
+        Result := _id;
+      end;
+
+    // // // // // // // // // // //
 
     function TModal.WindowAction(x, y: Word): TWindowResult;
       var

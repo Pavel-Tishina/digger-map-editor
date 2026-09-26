@@ -1,7 +1,7 @@
 program main_ag;
 
 uses
-  _fline, _ibtn, video, _mouse, _util, _types, draw, _windows, _flist;
+  _fline, _ibtn, video, _mouse, _util, _types, draw, _windows, _flist, _wman;
 
 var
   c, prev_mouse_lb, prev_mouse_rb : Byte;
@@ -12,8 +12,10 @@ var
 
   YES_NO_MODAL, FILE_MODAL, SIMPLE_MODAL : TModal;
   FLIST : TFileListObj;
+  WMAN: TWindowsManager;
 
 begin
+  Randomize;
   _exit := false;
   prev_mouse_lb := 0;
   prev_mouse_rb := 0;
@@ -50,14 +52,14 @@ begin
   E_BTN := IconButton.Init(300, 170, IconButtonType.ExitApp);
   E_BTN.Draw;
 
-  FLINE := TFileLine.Create(5, 5, '');
-  FLINE.Draw;
+  // FLINE := TFileLine.Create(5, 5, '');
+  // FLINE.Draw;
 
-  // YES_NO_MODAL := TModal.Create('My First Yes-No', ['Who are you?'], 100, 100, ModalType.YesNoWindow);
-  // YES_NO_MODAL.Show;
+  // // YES_NO_MODAL := TModal.Create('My First Yes-No', ['Who are you?'], 100, 100, ModalType.YesNoWindow);
+  // // YES_NO_MODAL.Show;
 
-  FILE_MODAL := TModal.Create(100, 20, ModalType.FileWindow);
-  FILE_MODAL.Show;
+  // FILE_MODAL := TModal.Create(100, 20, ModalType.FileWindow);
+  // FILE_MODAL.Show;
 
   // FLIST := TFileListObj.Create(100, 20);
   // FLIST.Draw;
@@ -67,6 +69,9 @@ begin
     MouseSetRange320x200;
     MouseShow;
   end;
+
+  WMAN := TWindowsManager.Create;
+  WMAN.FindNoSpaceModal.Show;
 
   repeat
 
@@ -81,22 +86,22 @@ begin
     if LBtnRelease(MyMouse.Btn, prev_mouse_lb) then
       begin
         MouseHide;
-        if FLINE.IsClick(MyMouse.X, MyMouse.Y) then
-          begin
-            MouseHide;
-            FLINE.EditName;
-            MouseShow;
-          end;
+        // if FLINE.IsClick(MyMouse.X, MyMouse.Y) then
+        //   begin
+        //     MouseHide;
+        //     FLINE.EditName;
+        //     MouseShow;
+        //   end;
 
         // if YES_NO_MODAL.IsClick(MyMouse.X, MyMouse.Y) AND YES_NO_MODAL.IsShown then
         //   begin
         //     YES_NO_MODAL.WindowAction(MyMouse.X, MyMouse.Y);
         //   end;
 
-        if FILE_MODAL.IsClick(MyMouse.X, MyMouse.Y) AND FILE_MODAL.IsShown then
-          begin
-            FILE_MODAL.WindowAction(MyMouse.X, MyMouse.Y);
-          end;
+        // if FILE_MODAL.IsClick(MyMouse.X, MyMouse.Y) AND FILE_MODAL.IsShown then
+        //   begin
+        //     FILE_MODAL.WindowAction(MyMouse.X, MyMouse.Y);
+        //   end;
 
         // if FLIST.IsClick(MyMouse.X, MyMouse.Y) then
         //   begin
@@ -104,6 +109,7 @@ begin
         //     FLIST.Action(MyMouse.X, MyMouse.Y);
         //   end;
         
+        if 
 
         E_BTN.Click(MyMouse.X, MyMouse.Y);
         MouseShow;
