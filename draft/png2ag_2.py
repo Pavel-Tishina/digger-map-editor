@@ -332,6 +332,10 @@ def encode_rle_record(
     # bit 15 = 1
     #
     # repeat bits = 15 - color_bits
+    #
+    # Stored big-endian (high byte first): the decoder
+    # checks bit 7 of the FIRST byte to detect a 2-byte
+    # record, so the flag byte must come first.
     # --------------------------------------------------------
 
     repeat_bits_2 = 15 - color_bits
@@ -349,7 +353,7 @@ def encode_rle_record(
         )
 
         return struct.pack(
-            "<H",
+            ">H",
             value
         )
 

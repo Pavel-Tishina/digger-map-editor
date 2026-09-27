@@ -67,7 +67,10 @@ implementation
       mov ds, ax          { params are SS:BP based - DS may change }
 
       cld
-      rep movsb
+      shr cx, 1           { count in words, CF = odd byte }
+      rep movsw           { rep/movs do not change flags }
+      adc cx, cx          { cx = 0 -> cx = CF }
+      rep movsb           { last odd byte, if any }
 
       pop di
       pop si

@@ -13,53 +13,49 @@ implementation
 
   const
     _s  : String[66] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?~-+''"\/()[]{}.,:;=_<>#&%^*|@';
-    _r  : Byte = 8;
+    _r  = 8;             // letter size (8x8)
     _xn : Byte = 21;
     _yn : Byte = 2;
+
+  type
+    TGlyph = array[0.._r - 1, 0.._r - 1] of Byte;   // [y, x]
 
   var
     _x, _y: Word;
     _cf, _sidx, _xl, _yl: Byte;
-    _symbols : array[1..66] of ImageData;
+    _symbols : array[1..66] of TGlyph;   // static: 4224 bytes, no heap
+    _index   : array[Char] of Byte;      // char -> symbol number, 0 = no glyph
     _full_img : ImageData;
     _font_file : ArchiveGraphicFile;
 
-  function LoadLetter(xp, yp : Word; img: ImageData): ImageData;
+  procedure LoadLetter(n: Byte; xp, yp : Word; const img: ImageData);
     var
-      _img_out : ImageData;
-      _x, _y : Word;
+      _x, _y : Byte;
 
     begin
-      setLength(_img_out, _r, _r);
-      
       for _y := 0 to _r - 1 do
         for _x := 0 to _r - 1 do
-          _img_out[_x, _y] := img[xp + _x, yp + _y];
-
-      Result := _img_out;
+          _symbols[n, _y, _x] := img[xp + _x, yp + _y];
     end;
 
-  procedure DrawLetter(x, y: Word; c: Byte);
+  procedure DrawLetter(x, y: Word; c: Char);
     var
-      _n, _x, _y : Byte;
-      _b : Boolean;
-      _c : Char;
+      _n, _x, _y, _p : Byte;
+      _yc : Word;
 
     begin
-      // c := UpCase(c);
+      _n := _index[c];
+      if _n = 0 then exit;
 
-      if (pos(chr(c), _s) > 0) OR (pos(chr(c - 32) , _s) > 0) then
-      // if pos(chr(c), _s) > 0 then
+      for _y := 0 to _r - 1 do
         begin
-          _c := UpCase(chr(c));         // !!
-          for _n := 1 to Length(_s) do
-            if _s[_n] = _c then
-              break;
-
-          for _y := 0 to _r - 1 do
-            for _x := 0 to _r - 1 do
-              if _symbols[_n, _x, _y] <> _cf then
-                PutPixelOffset(LineOffset[y + _y] + x + _x, _symbols[_n, _x, _y]);
+          _yc := LineOffset[y + _y] + x;
+          for _x := 0 to _r - 1 do
+            begin
+              _p := _symbols[_n, _y, _x];
+              if _p <> _cf then
+                PutPixelOffset(_yc + _x, _p);
+            end;
         end;
     end;
 
@@ -70,15 +66,22 @@ implementation
     begin
       for _i := 1 to Length(s) do
         if s[_i] <> ' ' then
-          DrawLetter(x + ((_i - 1) * _r), y, ord(s[_i]));
+          DrawLetter(x + ((_i - 1) * _r), y, s[_i]);
     end;
 
 begin
+  FillChar(_index, SizeOf(_index), 0);
+  for _sidx := 1 to Length(_s) do
+    begin
+      _index[_s[_sidx]] := _sidx;
+      _index[LowerCase(_s[_sidx])] := _sidx;   // lower case -> same glyph
+    end;
+
   _font_file := ArchiveGraphicFile.Init('\DRAFT\ABC_V2.CG2'#0);
-  
+
   _cf := _font_file.GetTrasperentColor;
   _full_img := _font_file.GetImg2;
-  
+
   _sidx := 1;
   _y := 0;
   for _yl := 0 to _yn do
@@ -87,13 +90,15 @@ begin
 
       for _xl := 0 to _xn do
         begin
-          _symbols[_sidx] := LoadLetter(_x, _y, _full_img);
-              
+          LoadLetter(_sidx, _x, _y, _full_img);
+
           inc(_x, _r);
           inc(_sidx);
         end;
       inc(_y, _r);
     end;
 
+  // font image and packed file data are not needed anymore
   _full_img := nil;
+  _font_file.Free;
 end.

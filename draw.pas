@@ -161,61 +161,103 @@ implementation
 
     ////////////////////////////////////////////
 
-    procedure FilledSquare(x, y, s: Word; c, cf: Byte);
-        var 
-            i: Word;
+    // horizontal span: count pixels from offset, 2 pixels per write
+    procedure FillSpan(ofs, count: Word; color: Byte); assembler;
+        asm
+            push es
+
+            mov ax,VideoSeg
+            mov es,ax
+
+            mov di,ofs
+            mov cx,count
+            mov al,color
+            mov ah,al
+
+            cld
+            shr cx,1        { words, CF = odd pixel }
+            rep stosw       { rep/stos do not change flags }
+            adc cx,cx       { cx = 0 -> cx = CF }
+            rep stosb
+
+            pop es
+        end;
+
+    ////////////////////////////////////////////
+
+    // vertical span: count pixels down from offset
+    procedure VSpan(ofs, count: Word; color: Byte); assembler;
+        asm
+            push es
+
+            mov ax,VideoSeg
+            mov es,ax
+
+            mov di,ofs
+            mov cx,count
+            mov al,color
+
+            jcxz @@done     { loop with cx = 0 would run 65536 times }
+        @@next:
+            mov es:[di],al
+            add di,320
+            loop @@next
+        @@done:
+            pop es
+        end;
+
+    ////////////////////////////////////////////
+
+    // makes x1 <= x2 and y1 <= y2
+    procedure SortCorners(var x1, y1, x2, y2: Word);
+        var
+            t: Word;
 
         begin
-            Square(x, y, s, c);
-            for i := 1 to s - 1 do
-                Square(x + i, y + i, s - i - 1, cf);
+            if x1 > x2 then begin t := x1; x1 := x2; x2 := t; end;
+            if y1 > y2 then begin t := y1; y1 := y2; y2 := t; end;
+        end;
+
+    ////////////////////////////////////////////
+
+    procedure FilledSquare(x, y, s: Word; c, cf: Byte);
+        begin
+            FilledRectangle(x, y, x + s, y + s, c, cf);
         end;
 
     ////////////////////////////////////////////
 
     procedure Rectangle(x1, y1, x2, y2: Word; c: Byte);
         var
-            n, i : Word;
+            w: Word;
 
         begin
-            n := abs(x1 - x2) div 2;        
-            for i:= 0 to n do
-            begin
-                PutPixelOffset(LineOffset[y1] + x1 + i, c);
-                PutPixelOffset(LineOffset[y1] + x2 - i, c);
-                PutPixelOffset(LineOffset[y2] + x1 + i, c);
-                PutPixelOffset(LineOffset[y2] + x2 - i, c);
-            end;
+            SortCorners(x1, y1, x2, y2);
+            w := x2 - x1 + 1;
 
-            n := abs(y1 - y2) div 2;        
-            for i:= 0 to n do
-            begin
-                PutPixelOffset(LineOffset[y1 + i] + x1, c);
-                PutPixelOffset(LineOffset[y1 + i] + x2, c);
-                PutPixelOffset(LineOffset[y2 - i] + x1, c);
-                PutPixelOffset(LineOffset[y2 - i] + x2, c);
-            end;
+            FillSpan(LineOffset[y1] + x1, w, c);
+            if y1 = y2 then exit;
+            FillSpan(LineOffset[y2] + x1, w, c);
+
+            VSpan(LineOffset[y1 + 1] + x1, y2 - y1 - 1, c);
+            VSpan(LineOffset[y1 + 1] + x2, y2 - y1 - 1, c);
         end;
 
     ////////////////////////////////////////////
 
     procedure FilledRectangle(x1, y1, x2, y2: Word; c, cf: Byte);
-        var 
-            i, yy, xx: Word;
+        var
+            w, yy: Word;
 
         begin
             Rectangle(x1, y1, x2, y2, c);
-                // Buggy... 
-            // y := trunc(abs(y1 - y2) / 2);
-            // yy := abs(y1 - y2) div 2;
-            // for i := 1 to yy do
-            //   begin
-            //     Rectangle(x1 + xx, y1 + i, x2 - xx, y2 - i, cf);
-            //   end;
 
+            SortCorners(x1, y1, x2, y2);
+            if (x2 - x1 < 2) or (y2 - y1 < 2) then exit;  // no inner area
+
+            w := x2 - x1 - 1;
             for yy := y1 + 1 to y2 - 1 do
-              for xx := x1 + 1 to x2 - 1 do
-                PutPixelOffset(LineOffset[yy] + xx, cf);
+                FillSpan(LineOffset[yy] + x1 + 1, w, cf);
         end;
 
     ////////////////////////////////////////////
