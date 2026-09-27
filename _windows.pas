@@ -71,6 +71,7 @@ type
 
     // procedure SetId(id: Byte);
     function GetId: Byte;
+    function GetType: ModalType;
   end;
 
 implementation
@@ -327,9 +328,16 @@ implementation
 
      // // // // // // // // // // //
 
-     function TModal.GetId: Byte;
+    function TModal.GetId: Byte;
       begin
         Result := _id;
+      end;
+
+    // // // // // // // // // // //
+
+    function TModal.GetType: ModalType;
+      begin
+        Result := _wtype;
       end;
 
     // // // // // // // // // // //

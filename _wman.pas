@@ -6,7 +6,7 @@ unit _wman;
 interface
 
 uses
-  io, draw, _types, _util, _font, _windows;
+  io, draw, _types, _util, _font, _windows, design;
 
 type
   TWindowsManager = class
@@ -28,15 +28,18 @@ type
       _no_space_w_y   : Byte = 100;
       _no_space_w_t   : ShortString = 'No Free disk-space!';
       _no_space_w_txt : ShortString = 'We can not save a file...';
-
       
     var
       _modals  : array of TModal;
       _result  : TWindowResult;
+      _success_close: Boolean;
       _file_modal_id    : Byte; 
       _rewrite_modal_id : Byte;
       _not_sav_modal_id : Byte;
       _no_space_modal_id : Byte;
+      _active_window    : ShortInt;
+      _error_w        : TModal;
+
 
     constructor Create;
 
@@ -59,6 +62,10 @@ type
     function FindRewriteModal: TModal;
     function FindNotSaveModal: TModal;
     function FindNoSpaceModal: TModal;
+
+    procedure FindActiveWindow;
+    // function GetActiveWindow: TModal;
+    procedure Action(x, y: Word);
   
   end;
 
@@ -73,6 +80,9 @@ implementation
         _rewrite_modal_id  := 0;
         _not_sav_modal_id  := 0;
         _no_space_modal_id := 0;
+
+        _success_close := false;
+        _error_w := TModal.Create('ERROR', ['ERROR'], _no_space_w_x, _no_space_w_y, _no_space_w_x + 50, 0, ModalType.SimpleWindow, 0);
 
         AddFileListModal;
         AddChangesNotSavedModal;
@@ -208,11 +218,9 @@ implementation
         
         AddModal(
           TModal.Create(
-            _no_space_w_t,
-            [_no_space_w_txt],
-            _no_space_w_x,
-            _no_space_w_y,
-            ModalType.SimpleWindow,
+            _file_w_x,
+            _file_w_y,
+            ModalType.FileWindow,
             _file_modal_id
           )
         );
@@ -226,8 +234,7 @@ implementation
       var _i : Byte;
 
       begin
-        if (length(_modals) = 0) OR (NOT IdModalExist(id)) then
-          exit(TModal.Create('ERROR', [''], _no_space_w_x, _no_space_w_y, ModalType.SimpleWindow, 0));
+        if (length(_modals) = 0) OR (NOT IdModalExist(id)) then exit(_error_w);
 
         for _i := 0 to length(_modals) - 1 do
           if _modals[_i].GetId = id then exit(_modals[_i]); 
@@ -274,6 +281,53 @@ implementation
     function TWindowsManager.FindNoSpaceModal: TModal;
       begin
         Result := FindModalById(specialize IfElse<Byte>(_no_space_modal_id <> 0, _no_space_modal_id, AddNoSpaceModal));
+      end;
+
+    // // // // // // // // // //
+
+    procedure TWindowsManager.FindActiveWindow;
+      var _i : Byte;
+      begin
+        if length(_modals) = 0 then
+          _active_window := -1;
+
+        for _i := 0 to length(_modals) - 1 do
+          if _modals[_i].IsShown then
+            begin
+              _active_window := _i;
+              exit;
+            end;
+
+        _active_window := -1;
+      end;
+
+    // // // // // // // // // //
+
+    procedure TWindowsManager.Action(x, y: Word);
+      var 
+        _m : TModal;
+        _r : TWindowResult;
+
+      begin
+        if (_active_window < 0) then FindActiveWindow;
+
+        if (_active_window >= 0) then
+          begin
+            _m := _modals[_active_window];
+            // SetGray;
+            
+            _r := _m.WindowAction(x, y);
+            _success_close := specialize IfElse<Boolean>(_m.GetType = ModalType.FileWindow, length(_r.S) > 4, _r.B);
+              
+            if _success_close then
+              begin
+                SetResult(_r);
+                _modals[_active_window].Hide;
+                _active_window := -1;  
+              end;
+            
+            // SetNormal;
+          end;
       end;
 
     // // // // // // // // // //

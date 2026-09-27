@@ -1,7 +1,7 @@
 program main_ag;
 
 uses
-  _fline, _ibtn, video, _mouse, _util, _types, draw, _windows, _flist, _wman;
+  _fline, _ibtn, video, _mouse, _util, _types, draw, _windows, _flist, _wman, design;
 
 var
   c, prev_mouse_lb, prev_mouse_rb : Byte;
@@ -10,12 +10,11 @@ var
   E_BTN : IconButton;
   mouseOldX, mouseOldY, o : Word;
 
-  YES_NO_MODAL, FILE_MODAL, SIMPLE_MODAL : TModal;
+  BTN_1, BTN_2, BTN_3, BTN_4 : IconButton;
   FLIST : TFileListObj;
   WMAN: TWindowsManager;
 
 begin
-  Randomize;
   _exit := false;
   prev_mouse_lb := 0;
   prev_mouse_rb := 0;
@@ -52,6 +51,11 @@ begin
   E_BTN := IconButton.Init(300, 170, IconButtonType.ExitApp);
   E_BTN.Draw;
 
+  BTN_1 := IconButton.Init(100, 10, IconButtonType.Load);
+  BTN_2 := IconButton.Init(140, 10, IconButtonType.Save);
+  BTN_3 := IconButton.Init(180, 10, IconButtonType.NewLvl);
+  BTN_4 := IconButton.Init(220, 10, IconButtonType.Cross);
+
   // FLINE := TFileLine.Create(5, 5, '');
   // FLINE.Draw;
 
@@ -64,6 +68,11 @@ begin
   // FLIST := TFileListObj.Create(100, 20);
   // FLIST.Draw;
 
+  BTN_1.Draw;
+  BTN_2.Draw;
+  BTN_3.Draw;
+  BTN_4.Draw;
+
   if MouseInit then
   begin
     MouseSetRange320x200;
@@ -71,11 +80,10 @@ begin
   end;
 
   WMAN := TWindowsManager.Create;
-  WMAN.FindNoSpaceModal.Show;
-
+  
   repeat
 
-    MouseUpdate();
+    MouseUpdate;
 
     if (mouseOldX <> MyMouse.X) OR (mouseOldY <> MyMouse.Y) then
     begin
@@ -86,6 +94,41 @@ begin
     if LBtnRelease(MyMouse.Btn, prev_mouse_lb) then
       begin
         MouseHide;
+
+        if BTN_1.IsClick(MyMouse.X, MyMouse.Y) then
+          WMAN.FindFileModal.Show
+        else if BTN_2.IsClick(MyMouse.X, MyMouse.Y) then
+          WMAN.FindRewriteModal.Show
+        else if BTN_3.IsClick(MyMouse.X, MyMouse.Y) then
+          WMAN.FindNotSaveModal.Show
+        else if BTN_4.IsClick(MyMouse.X, MyMouse.Y) then
+          WMAN.FindNoSpaceModal.Show;
+
+        MouseShow;
+        prev_mouse_lb := MyMouse.Btn;
+        if WMAN.IsAnyModalOpen then
+          begin
+            SetGray;
+            repeat
+              MouseUpdate;
+
+              if (mouseOldX <> MyMouse.X) OR (mouseOldY <> MyMouse.Y) then
+                begin
+                  mouseOldX := MyMouse.X;
+                  mouseOldY := MyMouse.Y;
+                end;
+
+              if LBtnRelease(MyMouse.Btn, prev_mouse_lb) then
+                WMAN.Action(MyMouse.X, MyMouse.Y);
+
+              prev_mouse_lb := MyMouse.Btn;
+              prev_mouse_rb := MyMouse.Btn;
+            until (WMAN.IsAnyModalOpen);
+
+            SetNormal;
+
+          end;
+
         // if FLINE.IsClick(MyMouse.X, MyMouse.Y) then
         //   begin
         //     MouseHide;
@@ -109,7 +152,7 @@ begin
         //     FLIST.Action(MyMouse.X, MyMouse.Y);
         //   end;
         
-        if 
+        
 
         E_BTN.Click(MyMouse.X, MyMouse.Y);
         MouseShow;
