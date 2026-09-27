@@ -14,18 +14,18 @@ type
       _file_w_x      : Byte = 82;
       _file_w_y      : Byte = 20;
       
-      _rewrite_w_x   : Byte = 70;
-      _rewrite_w_y   : Byte = 100;
+      _rewrite_w_x   : Byte = 65;
+      _rewrite_w_y   : Byte = 70;
       _rewrite_w_t   : ShortString = 'File already exist!';
       _rewrite_w_txt : ShortString = 'Would you like to rewrite it?';
 
-      _not_sav_w_x   : Byte = 70;
-      _not_sav_w_y   : Byte = 100;
+      _not_sav_w_x   : Byte = 65;
+      _not_sav_w_y   : Byte = 70;
       _not_sav_w_t   : ShortString = 'Map changes not saved!';
-      _not_sav_w_txt : ShortString = 'Would you like to save it before exit?';
+      _not_sav_w_txt : array [1..2] of ShortString = ('Would you like to save it',  'before the exit?');
 
-      _no_space_w_x   : Byte = 70;
-      _no_space_w_y   : Byte = 100;
+      _no_space_w_x   : Byte = 65;
+      _no_space_w_y   : Byte = 70;
       _no_space_w_t   : ShortString = 'No Free disk-space!';
       _no_space_w_txt : ShortString = 'We can not save a file...';
       
@@ -33,38 +33,20 @@ type
       _modals  : array of TModal;
       _result  : TWindowResult;
       _success_close: Boolean;
-      _file_modal_id    : Byte; 
-      _rewrite_modal_id : Byte;
-      _not_sav_modal_id : Byte;
-      _no_space_modal_id : Byte;
-      _active_window    : ShortInt;
-      _error_w        : TModal;
-
+      _active_window  : ShortInt;
 
     constructor Create;
 
-    procedure SetResult(result_obj: TWindowResult); 
-    // procedure DoAfterCloseAction;
-
-    procedure AddModal(modal: TModal);
-    function GetFreeId: Byte;
+    procedure SetResult(result_obj: TWindowResult);
   
-    function AddRewriteAlertModal: Byte;
-    function AddChangesNotSavedModal: Byte;
-    function AddFileListModal: Byte;
-    function AddNoSpaceModal: Byte;
-
-    function FindModalById(id: Byte): TModal;
     function IsAnyModalOpen: Boolean;
-    function IdModalExist(id: Byte): Boolean;
-
-    function FindFileModal: TModal;
-    function FindRewriteModal: TModal;
-    function FindNotSaveModal: TModal;
-    function FindNoSpaceModal: TModal;
+  
+    function GetFileModal: TModal;
+    function GetRewriteModal: TModal;
+    function GetNotSaveModal: TModal;
+    function GetNoSpaceModal: TModal;
 
     procedure FindActiveWindow;
-    // function GetActiveWindow: TModal;
     procedure Action(x, y: Word);
   
   end;
@@ -74,27 +56,55 @@ implementation
 
     constructor TWindowsManager.Create;
       begin
-        Randomize;
-        // try late init windows =)
-        _file_modal_id     := 0; 
-        _rewrite_modal_id  := 0;
-        _not_sav_modal_id  := 0;
-        _no_space_modal_id := 0;
-
         _success_close := false;
-        _error_w := TModal.Create('ERROR', ['ERROR'], _no_space_w_x, _no_space_w_y, _no_space_w_x + 50, 0, ModalType.SimpleWindow, 0);
+        _active_window := -1;
 
-        AddFileListModal;
-        AddChangesNotSavedModal;
-        AddRewriteAlertModal;
-        AddNoSpaceModal;
+        setLength(_modals, 5);
+        
+        // ERROR
+        _modals[0] := TModal.Create(
+          'ERROR', 
+          ['ERROR'], 
+          _no_space_w_x, 
+          _no_space_w_y, 
+          _no_space_w_x + 50, 
+          0, 
+          ModalType.SimpleWindow
+        );
 
-        // _file_modal_id     := 1; 
-        // _rewrite_modal_id  := 2;
-        // _not_sav_modal_id  := 3;
-        // _no_space_modal_id := 4;
-        // setLength(_modals, 4);
-        // _modals[0]
+        // FILE REWRITE
+        _modals[1] := TModal.Create(
+            _rewrite_w_t,
+            [_rewrite_w_txt],
+            _rewrite_w_x,
+            _rewrite_w_y,
+            ModalType.YesNoWindow
+          );
+
+        // Changes not saved
+        _modals[2] := TModal.Create(
+            _not_sav_w_t,
+            _not_sav_w_txt,
+            _not_sav_w_x,
+            _not_sav_w_y,
+            ModalType.YesNoWindow
+          );
+
+        // No free space
+        _modals[3] := TModal.Create(
+            _no_space_w_t,
+            [_no_space_w_txt],
+            _no_space_w_x,
+            _no_space_w_y,
+            ModalType.SimpleWindow
+          );
+        
+        // File list
+        _modals[4] := TModal.Create(
+            _file_w_x,
+            _file_w_y,
+            ModalType.FileWindow
+          );
 
       end;
 
@@ -104,141 +114,6 @@ implementation
       begin
         if length(_modals) > 0 then
           _result := result_obj;
-      end;
-
-    // // // // // // // // // //
-
-    function TWindowsManager.IdModalExist(id: Byte): Boolean;
-      var _i : Byte;
-      begin
-        if length(_modals) = 0 then exit(False);
-
-        for _i := 0 to length(_modals) - 1 do
-          if _modals[_i].GetId = id then exit(True);
-
-        exit(false);
-      end;
-
-    // // // // // // // // // //
-
-    function TWindowsManager.GetFreeId: Byte;
-      var _id : Byte;
-      begin
-        if length(_modals) = 0 then exit(Random(256));
-
-        repeat
-          _id := Random(256);
-        until (IdModalExist(_id) = True);
-
-        Result := _id;
-      end;
-
-    // // // // // // // // // //
-
-    procedure TWindowsManager.AddModal(modal: TModal);
-      var _s : Byte;
-      begin
-        if IdModalExist(modal.GetId) = True then exit;
-
-        _s := length(_modals);
-        setLength(_modals, _s + 1);
-        _modals[_s] := modal;
-      end;
-    
-    // // // // // // // // // //
-
-    function TWindowsManager.AddRewriteAlertModal: Byte;
-      begin
-        if _rewrite_modal_id <> 0 then exit(_rewrite_modal_id);
-
-        _rewrite_modal_id := GetFreeId;
-        
-        AddModal(
-          TModal.Create(
-            _rewrite_w_t,
-            [_rewrite_w_txt],
-            _rewrite_w_x,
-            _rewrite_w_y,
-            ModalType.YesNoWindow,
-            _rewrite_modal_id
-          )
-        );
-
-        Result := _rewrite_modal_id;
-      end;
-
-    // // // // // // // // // //
-
-    function TWindowsManager.AddChangesNotSavedModal: Byte;
-      begin
-        if _not_sav_modal_id <> 0 then exit(_not_sav_modal_id);
-        _not_sav_modal_id := GetFreeId;
-        
-        AddModal(
-          TModal.Create(
-            _not_sav_w_t,
-            [_not_sav_w_txt],
-            _not_sav_w_x,
-            _not_sav_w_y,
-            ModalType.YesNoWindow,
-            _not_sav_modal_id
-          )
-        );
-
-      Result := _not_sav_modal_id;
-    end;
-
-    // // // // // // // // // //
-
-    function TWindowsManager.AddNoSpaceModal: Byte;
-      begin
-        if _no_space_modal_id <> 0 then exit(_no_space_modal_id);
-        _no_space_modal_id := GetFreeId;
-        
-        AddModal(
-          TModal.Create(
-            _no_space_w_t,
-            [_no_space_w_txt],
-            _no_space_w_x,
-            _no_space_w_y,
-            ModalType.SimpleWindow,
-            _no_space_modal_id
-          )
-        );
-      
-      Result := _no_space_modal_id;
-    end;
-
-    // // // // // // // // // //
-
-    function TWindowsManager.AddFileListModal: Byte;
-      begin
-        if _file_modal_id <> 0 then exit(_file_modal_id);
-        _file_modal_id := GetFreeId;
-        
-        AddModal(
-          TModal.Create(
-            _file_w_x,
-            _file_w_y,
-            ModalType.FileWindow,
-            _file_modal_id
-          )
-        );
-
-      Result := _file_modal_id;
-    end;
-
-    // // // // // // // // // //
-
-    function TWindowsManager.FindModalById(id: Byte): TModal;
-      var _i : Byte;
-
-      begin
-        if (length(_modals) = 0) OR (NOT IdModalExist(id)) then exit(_error_w);
-
-        for _i := 0 to length(_modals) - 1 do
-          if _modals[_i].GetId = id then exit(_modals[_i]); 
-
       end;
 
     // // // // // // // // // //    
@@ -257,30 +132,30 @@ implementation
 
     // // // // // // // // // //
 
-    function TWindowsManager.FindFileModal: TModal;
+    function TWindowsManager.GetFileModal: TModal;
       begin
-        Result := FindModalById(specialize IfElse<Byte>(_file_modal_id <> 0, _file_modal_id, AddFileListModal));
+        Result := _modals[4];
       end;
 
     // // // // // // // // // //
 
-    function TWindowsManager.FindRewriteModal: TModal;
+    function TWindowsManager.GetRewriteModal: TModal;
       begin
-        Result := FindModalById(specialize IfElse<Byte>(_rewrite_modal_id <> 0, _rewrite_modal_id, AddRewriteAlertModal));
+        Result := _modals[1];
       end;
 
     // // // // // // // // // //
 
-    function TWindowsManager.FindNotSaveModal: TModal;
+    function TWindowsManager.GetNotSaveModal: TModal;
       begin
-        Result := FindModalById(specialize IfElse<Byte>(_not_sav_modal_id <> 0, _not_sav_modal_id, AddChangesNotSavedModal));
+        Result := _modals[2];
       end;
 
     // // // // // // // // // //
 
-    function TWindowsManager.FindNoSpaceModal: TModal;
+    function TWindowsManager.GetNoSpaceModal: TModal;
       begin
-        Result := FindModalById(specialize IfElse<Byte>(_no_space_modal_id <> 0, _no_space_modal_id, AddNoSpaceModal));
+        Result := _modals[3];
       end;
 
     // // // // // // // // // //
@@ -289,7 +164,10 @@ implementation
       var _i : Byte;
       begin
         if length(_modals) = 0 then
-          _active_window := -1;
+          begin
+            _active_window := -1;
+            exit;
+          end;
 
         for _i := 0 to length(_modals) - 1 do
           if _modals[_i].IsShown then
@@ -314,19 +192,18 @@ implementation
         if (_active_window >= 0) then
           begin
             _m := _modals[_active_window];
-            // SetGray;
+            if (not _m.IsClick(x, y)) then exit;
             
             _r := _m.WindowAction(x, y);
             _success_close := specialize IfElse<Boolean>(_m.GetType = ModalType.FileWindow, length(_r.S) > 4, _r.B);
-              
+
             if _success_close then
-              begin
-                SetResult(_r);
-                _modals[_active_window].Hide;
-                _active_window := -1;  
-              end;
-            
-            // SetNormal;
+              SetResult(_r);
+
+            // window hides itself in WindowAction (on success or not)
+            if not _m.IsShown then
+              _active_window := -1;
+
           end;
       end;
 

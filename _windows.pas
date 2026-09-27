@@ -5,7 +5,7 @@ unit _windows;
 interface
 
 uses
-  _ag, _types, _font, _util, draw, _ibtn, _mbtn, io, _flist;
+  _ag, _types, _font, _util, draw, _ibtn, _mbtn, io, _flist, _back;
 
 type
   TModal = class(TGUI)
@@ -29,33 +29,30 @@ type
       _sys_btns: array of IconButton;
       _files_list: TFileListObj;
       _wtype: ModalType;
-      _bkg_area: ImageData;
+      // _bkg_area: ImageData;
+      _bkg_area: TBackGround;
 
       _title: String;
       _text: array of String;
       _close_after : Boolean;
-      _id: Byte;
 
     constructor Create(
       title: String; 
       text: array of String; 
       x1, y1, x2, y2: Word; 
-      wtype: ModalType;
-      id: Byte
+      wtype: ModalType
     );
 
     constructor Create(
       title: String; 
       text: array of String; 
       x1, y1: Word; 
-      wtype: ModalType;
-      id: Byte
+      wtype: ModalType
     );
 
     constructor Create(
       x1, y1: Word; 
-      wtype: ModalType;
-      id: Byte
+      wtype: ModalType
     );
 
     procedure InitElements(wtype: ModalType);
@@ -69,8 +66,6 @@ type
 
     function WindowAction(x, y: Word): TWindowResult;
 
-    // procedure SetId(id: Byte);
-    function GetId: Byte;
     function GetType: ModalType;
   end;
 
@@ -116,7 +111,7 @@ implementation
           ModalType.SimpleWindow:
             begin
               setLength(_buttons, 1);
-              _buttons[0] := TModalButton.Create(_x + ((_xm - _x) div 2) + (_btn_x div 2), _yy, _btn_x, _OKAY);
+              _buttons[0] := TModalButton.Create(_x + ((_xm - _x) div 2) - (_btn_x div 2), _yy, _btn_x, _OKAY);
             end;
 
         end;
@@ -126,11 +121,10 @@ implementation
 
     constructor TModal.Create(
       x1, y1: Word; 
-      wtype: ModalType;
-      id: Byte
+      wtype: ModalType
     );
       begin
-        Create('', [''], x1, y1, 0, 0, wtype, id);
+        Create('', [''], x1, y1, 0, 0, wtype);
       end;
 
     // // // // // // // // // // //
@@ -139,11 +133,10 @@ implementation
       title: String; 
       text: array of String; 
       x1, y1: Word; 
-      wtype: ModalType;
-      id: Byte
+      wtype: ModalType
     );
       begin
-        Create(title, text, x1, y1, 0, 0, wtype, id);
+        Create(title, text, x1, y1, 0, 0, wtype);
       end;
 
     // // // // // // // // // // //
@@ -152,8 +145,7 @@ implementation
       title: String; 
       text: array of String; 
       x1, y1, x2, y2: Word; 
-      wtype: ModalType;
-      id: Byte
+      wtype: ModalType
     );
       var
         _max_xl, _max_yl, _n : Word;
@@ -166,7 +158,6 @@ implementation
         for _i := 0 to length(text) - 1 do
           _text[_i] := text[_i];
         _wtype := wtype;
-        _id := id;
 
         _x := x1; 
         _y := y1;
@@ -215,6 +206,7 @@ implementation
         _i : Byte;
 
       begin
+        Result := 255;
         if NOT IsClick(x, y) then exit(255);
 
         for _i := 0 to length(_buttons) - 1 do
@@ -248,7 +240,8 @@ implementation
 
     function TModal.IsShown: Boolean;
       begin
-        Result := length(_bkg_area) > 0;
+        // Result := length(_bkg_area) > 0;
+        Result := (_bkg_area <> nil) AND (NOT _bkg_area.IsNull);
       end;
 
      // // // // // // // // // // //
@@ -258,14 +251,19 @@ implementation
         _xi, _yi, _yc: Word;
 
       begin
-        for _yi := _y to _ym do
-          begin
-            _yc := _yi - _y;
-            for _xi := _x to _xm do
-              PutPixelOffset(LineOffset[_yi] + _xi, _bkg_area[_xi - _x, _yc]);
-          end;
+        // for _yi := _y to _ym do
+        //   begin
+        //     _yc := _yi - _y;
+        //     for _xi := _x to _xm do
+        //       PutPixelOffset(LineOffset[_yi] + _xi, _bkg_area[_xi - _x, _yc]);
+        //   end;
 
-        setLength(_bkg_area, 0);
+        // setLength(_bkg_area, 0);
+        if _bkg_area = nil then exit;
+
+        _bkg_area.Draw(_x, _y);
+        _bkg_area.Free;
+        _bkg_area := nil;
       end;
 
      // // // // // // // // // // //
@@ -276,15 +274,24 @@ implementation
         _i: Byte;
 
       begin
-        setLength(_bkg_area, (_xm - _x) + 1, (_ym - _y) + 1);
+        // setLength(_bkg_area, (_xm - _x) + 1, (_ym - _y) + 1);
+        if _bkg_area <> nil then exit; // already shown
+
+        _bkg_area := TBackGround.Create(_x, _y, _xm, _ym);
+        if _bkg_area.IsNull then // no free DOS memory - can't restore, don't draw
+          begin
+            _bkg_area.Free;
+            _bkg_area := nil;
+            exit;
+          end;
 
         // !!!!!
-        for _yi := _y to _ym do
-          begin
-            _yc := _yi - _y;
-            for _xi := _x to _xm do
-              _bkg_area[_xi - _x, _yc] := GetPixelOffset(LineOffset[_yi] + _xi);
-          end;
+        // for _yi := _y to _ym do
+        //   begin
+        //     _yc := _yi - _y;
+        //     for _xi := _x to _xm do
+        //       _bkg_area[_xi - _x, _yc] := GetPixelOffset(LineOffset[_yi] + _xi);
+        //   end;
 
         FilledRectangle(_x, _y, _xm, _ym, 0, 8);
 
@@ -319,20 +326,6 @@ implementation
         
       end;
 
-     // // // // // // // // // // //    
-
-    //  procedure TModal.SetId(id: Byte);
-    //   begin
-    //     _id := id;
-    //   end;
-
-     // // // // // // // // // // //
-
-    function TModal.GetId: Byte;
-      begin
-        Result := _id;
-      end;
-
     // // // // // // // // // // //
 
     function TModal.GetType: ModalType;
@@ -346,6 +339,7 @@ implementation
       var
         _r  : TWindowResult;
         _selected_name : ShortString;
+        _btn : Byte;
 
       begin
         if NOT IsShown then
@@ -370,16 +364,19 @@ implementation
 
           ModalType.YesNoWindow:
             begin
+              _btn := WhatBtnClick(x, y);
               _r.Kind := rtBoolean;
-              _r.B := WhatBtnClick(x, y) = 0;
-              Hide;
+              _r.B := _btn = 0;
+              if _btn <> 255 then
+                Hide;
             end;
-          
+
           ModalType.SimpleWindow:
             begin
               _r.Kind := rtBoolean;
               _r.B := False;
-              Hide;
+              if WhatBtnClick(x, y) <> 255 then
+                Hide;
             end;
         end;
 

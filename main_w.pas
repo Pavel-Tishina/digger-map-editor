@@ -14,6 +14,14 @@ var
   FLIST : TFileListObj;
   WMAN: TWindowsManager;
 
+  procedure testPal;
+    begin
+      SetPalette(1, 5, 5, 5);
+      SetPalette(2, 10, 10, 10);
+      SetPalette(3, 15, 15, 15);
+      SetPalette(14, 20, 20, 20);
+    end;
+
 begin
   _exit := false;
   prev_mouse_lb := 0;
@@ -21,10 +29,7 @@ begin
   
 
   SetVideoMode13h;
-  SetPalette(1, 5, 5, 5);
-  SetPalette(2, 10, 10, 10);
-  SetPalette(3, 15, 15, 15);
-  SetPalette(14, 20, 20, 20);
+  testPal;
 
   // background
   for o := 0 to 64000 do
@@ -56,18 +61,6 @@ begin
   BTN_3 := IconButton.Init(180, 10, IconButtonType.NewLvl);
   BTN_4 := IconButton.Init(220, 10, IconButtonType.Cross);
 
-  // FLINE := TFileLine.Create(5, 5, '');
-  // FLINE.Draw;
-
-  // // YES_NO_MODAL := TModal.Create('My First Yes-No', ['Who are you?'], 100, 100, ModalType.YesNoWindow);
-  // // YES_NO_MODAL.Show;
-
-  // FILE_MODAL := TModal.Create(100, 20, ModalType.FileWindow);
-  // FILE_MODAL.Show;
-
-  // FLIST := TFileListObj.Create(100, 20);
-  // FLIST.Draw;
-
   BTN_1.Draw;
   BTN_2.Draw;
   BTN_3.Draw;
@@ -96,18 +89,18 @@ begin
         MouseHide;
 
         if BTN_1.IsClick(MyMouse.X, MyMouse.Y) then
-          WMAN.FindFileModal.Show
+          WMAN.GetFileModal.Show
         else if BTN_2.IsClick(MyMouse.X, MyMouse.Y) then
-          WMAN.FindRewriteModal.Show
+          WMAN.GetRewriteModal.Show
         else if BTN_3.IsClick(MyMouse.X, MyMouse.Y) then
-          WMAN.FindNotSaveModal.Show
+          WMAN.GetNotSaveModal.Show
         else if BTN_4.IsClick(MyMouse.X, MyMouse.Y) then
-          WMAN.FindNoSpaceModal.Show;
+          WMAN.GetNoSpaceModal.Show;
 
-        MouseShow;
         prev_mouse_lb := MyMouse.Btn;
         if WMAN.IsAnyModalOpen then
           begin
+            MouseShow;
             SetGray;
             repeat
               MouseUpdate;
@@ -119,14 +112,18 @@ begin
                 end;
 
               if LBtnRelease(MyMouse.Btn, prev_mouse_lb) then
-                WMAN.Action(MyMouse.X, MyMouse.Y);
+                begin
+                  MouseHide;
+                  WMAN.Action(MyMouse.X, MyMouse.Y);
+                  MouseShow;
+                end;
 
               prev_mouse_lb := MyMouse.Btn;
               prev_mouse_rb := MyMouse.Btn;
-            until (WMAN.IsAnyModalOpen);
+            until (NOT WMAN.IsAnyModalOpen);
 
             SetNormal;
-
+            testPal;
           end;
 
         // if FLINE.IsClick(MyMouse.X, MyMouse.Y) then
