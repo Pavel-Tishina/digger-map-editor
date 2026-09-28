@@ -218,6 +218,7 @@ implementation
 
     function TModal.WhatFileNameChoosed(x, y: Word): ShortString;
       begin
+        Result := '';
         if NOT IsClick(x, y)  then
           exit('');
 
@@ -342,6 +343,8 @@ implementation
         _btn : Byte;
 
       begin
+        _r.WType := _wtype;
+
         if NOT IsShown then
           begin
             _r.Kind := rtBoolean;

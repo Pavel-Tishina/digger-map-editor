@@ -17,7 +17,7 @@ type
       _x_line           : Byte = 99;
       _h_line           : Byte = 5;
       _v_line           : Byte = 12;
-      _text             : ShortString = '.PIC';
+      _name_ext         : ShortString = '.DLF';
 
       var
         _file_name : ShortString;
@@ -137,7 +137,7 @@ implementation
 
     begin
       if length(_file_name) = 0 then
-        SetName('.PIC');
+        SetName(_name_ext);
       
       Draw(true);
       _e := True;
@@ -149,13 +149,13 @@ implementation
             if (_k = 8) AND (_l > 4) then
               begin
                 _s := copy(_file_name, 0, _l - 5);
-                SetName(_s + '.PIC');
+                SetName(_s + _name_ext);
                 Draw(true);
               end
             else if ValidLetter(_k) AND (_l < 12) then
               begin
                 _s := copy(_file_name, 0, _l - 4) + chr(_k);
-                SetName(_s + '.PIC');
+                SetName(_s + _name_ext);
                 Draw(true);
               end
             else if ((_k = 10) OR (_k = 13) OR (_k = 27)) AND (_l > 4) then

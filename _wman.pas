@@ -38,6 +38,7 @@ type
     constructor Create;
 
     procedure SetResult(result_obj: TWindowResult);
+    function GetResult: TWindowResult;
   
     function IsAnyModalOpen: Boolean;
   
@@ -48,7 +49,6 @@ type
 
     procedure FindActiveWindow;
     procedure Action(x, y: Word);
-  
   end;
 
 
@@ -116,7 +116,14 @@ implementation
           _result := result_obj;
       end;
 
-    // // // // // // // // // //    
+    // // // // // // // // // //
+
+    function TWindowsManager.GetResult: TWindowResult;
+      begin
+        Result := _result;
+      end;
+
+    // // // // // // // // // //
 
     function TWindowsManager.IsAnyModalOpen: Boolean;
       var _i : Byte;

@@ -28,6 +28,7 @@ type
   TResultType = (rtBoolean, rtShortString, rtWord);
 
   TWindowResult = packed record
+    WType: ModalType;   // type of the window that produced the result
     case Kind: TResultType of
       rtBoolean:     (B: Boolean);
       rtShortString: (S: ShortString);
@@ -64,11 +65,12 @@ end;
 
   function CellTypeChar(AType: CellType): Char;
   function CellTypeMapPixel(AType: CellType): Byte;
+  function CharToCellType(c: Char): CellType;
   function IconButtonTypeFileName(AType: IconButtonType): PChar;
 
 implementation
   const
-    CELL_TYPE_CHAR : array[CellType] of Char = (Chr(20), 'B', 'C', 'S', 'H', 'V', Chr(0));
+    CELL_TYPE_CHAR : array[CellType] of Char = (' ', 'B', 'C', 'S', 'H', 'V', Chr(0));
     CELL_TYPE_MAP_PIXEL : array[CellType] of Byte = (10, 12, 2, 0, 0, 0, 15);
     ICON_BTN_FILE : array[IconButtonType] of PChar = ('\DRAFT\LOAD.CG2'#0, '\DRAFT\SAVE.CG2'#0, '\DRAFT\NEW.CG2'#0, '\DRAFT\EXIT.CG2'#0, ''#0);
 
@@ -80,6 +82,17 @@ implementation
   function CellTypeMapPixel(AType: CellType): Byte;
     begin
       Result := CELL_TYPE_MAP_PIXEL[AType];
+    end;
+
+  function CharToCellType(c: Char): CellType;
+    var
+      _t: CellType;
+    begin
+      for _t := Low(CellType) to High(CellType) do
+        if CELL_TYPE_CHAR[_t] = c then
+          exit(_t);
+
+      Result := CellType.Error;
     end;
 
   function IconButtonTypeFileName(AType: IconButtonType): PChar;

@@ -24,7 +24,7 @@ uses
     function FileSize(FileHandle: Word): LongInt;
 
     // DIR / FILE LIST
-    // Scans directory Path (e.g. '\DRAFT\') for files with the .PIC extension
+    // Scans directory Path (e.g. '\DRAFT\') for files with the .DLF extension
     // and stores their names into the caller buffer List, which must be an
     // array of String[12] (each element 13 bytes). Returns the number of
     // stored names.
@@ -32,7 +32,7 @@ uses
 
     function FindFiles2(Path: ShortString): ListOfFileNames;
 
-    // Returns the total number of .PIC files in directory Path.
+    // Returns the total number of .DLF files in directory Path.
     function CountLVLFiles(Path: PChar): Word;
 
     // KEYBOARD
@@ -313,7 +313,7 @@ implementation
             mov dx, offset DTA_Buf
             int 21h
 
-            { build search spec: Path + '*.PIC' }
+            { build search spec: Path + '*.DLF' }
             mov si, Path
             mov di, offset SearchSpec
             push ds
@@ -332,11 +332,11 @@ implementation
             inc di
             mov byte ptr [di], '.'
             inc di
-            mov byte ptr [di], 'P'
+            mov byte ptr [di], 'D'
             inc di
-            mov byte ptr [di], 'I'
+            mov byte ptr [di], 'L'
             inc di
-            mov byte ptr [di], 'C'
+            mov byte ptr [di], 'F'
             inc di
             mov byte ptr [di], 0
 
@@ -376,7 +376,7 @@ implementation
             mov dx, offset DTA_Buf
             int 21h
 
-            { build search spec: Path + '*.PIC' }
+            { build search spec: Path + '*.DLF' }
             mov si, Path
             mov di, offset SearchSpec
             push ds
@@ -395,11 +395,11 @@ implementation
             inc di
             mov byte ptr [di], '.'
             inc di
-            mov byte ptr [di], 'P'
+            mov byte ptr [di], 'D'
             inc di
-            mov byte ptr [di], 'I'
+            mov byte ptr [di], 'L'
             inc di
-            mov byte ptr [di], 'C'
+            mov byte ptr [di], 'F'
             inc di
             mov byte ptr [di], 0
 
@@ -475,7 +475,7 @@ implementation
           DirSpec[_i - 1] := Ord(Path[_i]);
         DirSpec[length(Path)] := 0;
 
-        _n := CountLVLFiles(@DirSpec[0]);   // fills SearchSpec with Path+'*.PIC'
+        _n := CountLVLFiles(@DirSpec[0]);   // fills SearchSpec with Path+'*.DLF'
         setLength(_arr, _n);
 
         if _n <= 0 then

@@ -123,7 +123,7 @@ implementation
       __n := length(_files);
       __p := _p * _files_frame;
       for __i := 0 to length(_f_lines) - 1 do
-        if _f_lines[__i].IsClick(x, y) and (__p + __i < length(_files)) then
+        if _f_lines[__i].IsClick(x, y) and (__p + __i < length(_files)) and (__i <> _s) then
           begin
             _f_lines[_s].Select(false);
             _f_lines[__i].Select(true);
@@ -163,6 +163,8 @@ implementation
 
   function TFileListObj.GetSelected: ShortString;
     begin
+      if _s < 0 then exit('');
+
       Result := _f_lines[_s].GetName;
     end;
 
@@ -173,10 +175,11 @@ implementation
       __i : ShortInt;
     begin
 
-      if NOT IsClick(x, y) then
+      if (_s < 0) OR NOT IsClick(x, y) then
         exit;
 
-      if _scroll.IsClick(x, y) then
+      // _scroll is created only when files don't fit in one frame
+      if (_scroll <> nil) and _scroll.IsClick(x, y) then
         begin
           __i := _scroll.Action(x, y);
           // writeln(__i, '  ', _p, ' = ', (__i >= 0) and (__i <> _p));

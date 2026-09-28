@@ -60,7 +60,7 @@ implementation
       _xm := xpos + (xc * _grid_size);
       _ym := ypos + (yc * _grid_size);
 
-      writeln(_x, ' ', _y, ' ', _xm, ' ', _ym);
+      // writeln(_x, ' ', _y, ' ', _xm, ' ', _ym);
 
       setLength(_cells, xc, yc);
 
@@ -121,7 +121,7 @@ implementation
       
       _xxx := GetCellCoord(x, _x, _xn);
       _yyy := GetCellCoord(y, _y, _yn);
-      writeln('xxx ', _xxx, ' --- yyy ', _yyy);
+      // writeln('xxx ', _xxx, ' --- yyy ', _yyy);
       Result := _cells[_xxx, _yyy];
 
     end;  
@@ -134,7 +134,7 @@ implementation
 
     begin
       _lvl_cell := GetClickedCell(x, y);
-      writeln(_lvl_cell.GetType);
+      // writeln(_lvl_cell.GetType);
 
       if (_lvl_cell.GetType <> CellType.Error) then
         GetClickedCellType := _lvl_cell.GetType;
