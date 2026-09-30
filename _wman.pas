@@ -23,7 +23,7 @@ type
       _not_sav_w_y   : Byte = 70;
       _not_sav_w_t   : ShortString = 'Map changes not saved!';
       _not_sav_w_txt : array [1..2] of ShortString = ('Would you like to save it',  'before the exit?');
-
+//
       _no_space_w_x   : Byte = 65;
       _no_space_w_y   : Byte = 70;
       _no_space_w_t   : ShortString = 'No Free disk-space!';

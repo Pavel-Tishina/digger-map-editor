@@ -5,7 +5,7 @@ unit _windows;
 interface
 
 uses
-  _ag, _types, _font, _util, draw, _ibtn, _mbtn, io, _flist, _back;
+  _ag, _types, _font, _util, draw, _ibtn, _mbtn, io, _flist, _back, design, _mouse;
 
 type
   TModal = class(TGUI)
@@ -65,8 +65,10 @@ type
     function WhatFileNameChoosed(x, y: Word): ShortString;
 
     function WindowAction(x, y: Word): TWindowResult;
+    function WaitResult(x, y: Word): TWindowResult; // Click Me!!
 
     function GetType: ModalType;
+
   end;
 
 implementation
@@ -382,8 +384,44 @@ implementation
                 Hide;
             end;
         end;
-
+        
         Result := _r;
-      end; 
+      end;
+
+  function TModal.WaitResult(x, y: Word): TWindowResult;
+    var
+      _r  : TWindowResult;
+      _pre_lb : Byte;
+
+      begin
+        SetGray;
+
+        FillChar(_r, SizeOf(_r), 0);
+        _r.WType := GetType;
+
+        MyMouse.X := x;
+        MyMouse.Y := y;
+        MyMouse.Btn := 0;
+        _pre_lb := 0;
+
+        MouseShow;
+        repeat
+          MouseUpdate;
+          
+          if LBtnRelease(MyMouse.Btn, _pre_lb) AND IsClick(MyMouse.X, MyMouse.Y) then
+            begin
+              MouseHide;
+              _r := WindowAction(MyMouse.X, MyMouse.Y);
+              MouseShow;
+            end;
+
+          _pre_lb := MyMouse.Btn;
+        until (NOT IsShown);
+
+        // MouseHide; // caller redraws the map, then shows the cursor again
+        SetNormal;
+        Result := _r;
+      end;
+
      
 end.

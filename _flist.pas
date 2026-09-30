@@ -106,7 +106,8 @@ implementation
       for __i := 0 to length(_f_lines) - 1 do
         _f_lines[__i].Draw;
 
-      _f_lines[0].Select(true);
+      // the list lives between window openings - keep the real selection
+      _f_lines[_s].Select(true);
     end;
 
   // // // // // // // //
