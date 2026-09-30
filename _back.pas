@@ -29,57 +29,16 @@ type
 
 implementation
 
-  function DosAlloc(paragraphs: Word): Word; assembler;
-    asm
-      mov ah, 48h
-      mov bx, paragraphs
-      int 21h
-      jnc @@ok
-      xor ax, ax          { error -> 0 }
-    @@ok:
-    end;
+{$L asm/back.obj}
 
-  // // // // // // // //
+  // DOS INT 21h / 48h: returns segment of the block, 0 on error
+  function DosAlloc(paragraphs: Word): Word; pascal; external name 'BACK_DOSALLOC';
 
-  procedure DosFree(segm: Word); assembler;
-    asm
-      push es
-      mov ax, segm
-      mov es, ax
-      mov ah, 49h
-      int 21h
-      pop es
-    end;
-
-  // // // // // // // //
+  // DOS INT 21h / 49h
+  procedure DosFree(segm: Word); pascal; external name 'BACK_DOSFREE';
 
   // copy count bytes: src_seg:src_ofs -> dst_seg:dst_ofs
-  procedure FarCopy(src_seg, src_ofs, dst_seg, dst_ofs, count: Word); assembler;
-    asm
-      push ds
-      push es
-      push si
-      push di
-
-      mov cx, count
-      mov di, dst_ofs
-      mov si, src_ofs
-      mov ax, dst_seg
-      mov es, ax
-      mov ax, src_seg
-      mov ds, ax          { params are SS:BP based - DS may change }
-
-      cld
-      shr cx, 1           { count in words, CF = odd byte }
-      rep movsw           { rep/movs do not change flags }
-      adc cx, cx          { cx = 0 -> cx = CF }
-      rep movsb           { last odd byte, if any }
-
-      pop di
-      pop si
-      pop es
-      pop ds
-    end;
+  procedure FarCopy(src_seg, src_ofs, dst_seg, dst_ofs, count: Word); pascal; external name 'BACK_FARCOPY';
 
   // // // // // // // //
 

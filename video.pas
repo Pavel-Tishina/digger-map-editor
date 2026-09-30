@@ -1,35 +1,16 @@
 unit video;
 
-{$ASMMODE INTEL}
+// Implementation: asm/video.asm
 
 interface
 
-procedure SetVideoMode13h;
-procedure SetTextMode;
-procedure WaitKey;
+procedure SetVideoMode13h; pascal; external name 'VIDEO_SETVIDEOMODE13H';
+procedure SetTextMode; pascal; external name 'VIDEO_SETTEXTMODE';
+// move it to IO.PAS
+procedure WaitKey; pascal; external name 'VIDEO_WAITKEY';
 
 implementation
 
-
-procedure SetVideoMode13h; assembler;
-asm
-    mov ax,$0013
-    int $10
-end;
-
-
-procedure SetTextMode; assembler;
-asm
-    mov ax,$0003
-    int $10
-end;
-
-// move it to IO.PAS
-procedure WaitKey; assembler;
-asm
-    mov ah,$00
-    int $16
-end;
-
+{$L asm/video.obj}
 
 end.

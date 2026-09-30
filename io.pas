@@ -1,6 +1,5 @@
 unit io;
 
-{$ASMMODE INTEL}
 {$MODE OBJFPC}
 
 interface
@@ -9,19 +8,22 @@ uses
   _types;
 
     // FILE
-    function CreateFile(FileName: PChar): Word;
+    function CreateFile(FileName: PChar): Word; pascal; external name 'IO_CREATEFILE';
     
-    function OpenFileRead(FileName: PChar): Word;
-    function OpenFileWrite(FileName: PChar): Word;
+    function OpenFileRead(FileName: PChar): Word; pascal; external name 'IO_OPENFILEREAD';
+    function OpenFileWrite(FileName: PChar): Word; pascal; external name 'IO_OPENFILEWRITE';
 
-    function ReadFile(Handle: Word; Buffer: Pointer; Count: Word): Word;
-    function WriteFile(Handle: Word; Buffer: Pointer; Count: Word): Word;
-    function CloseFile(Handle: Word): Boolean;
+    function ReadFile(Handle: Word; Buffer: Pointer; Count: Word): Word; pascal; external name 'IO_READFILE';
+    function WriteFile(Handle: Word; Buffer: Pointer; Count: Word): Word; pascal; external name 'IO_WRITEFILE';
+    function CloseFile(Handle: Word): Boolean; pascal; external name 'IO_CLOSEFILE';
     
-    function CheckFileExist(Name: PChar): Boolean;
+    function CheckFileExist(Name: PChar): Boolean; pascal; external name 'IO_CHECKFILEEXIST';
 
-    function FileSeek(Handle: Word; Pos: LongInt; Origin: Byte): LongInt;
-    function FileSize(FileHandle: Word): LongInt;
+    // Origin = 0 - from start of file
+    // Origin = 1 - from current position
+    // Origin = 2 - from end of file
+    function FileSeek(Handle: Word; Pos: LongInt; Origin: Byte): LongInt; pascal; external name 'IO_FILESEEK';
+    function FileSize(FileHandle: Word): LongInt; pascal; external name 'IO_FILESIZE';
 
     // DIR / FILE LIST
     // Scans directory Path (e.g. '\DRAFT\') for files with the .DLF extension
@@ -36,224 +38,17 @@ uses
     function CountLVLFiles(Path: PChar): Word;
 
     // KEYBOARD
-    function KeyPressed: Boolean;
-    function ReadKey: Word;
+    function KeyPressed: Boolean; pascal; external name 'IO_KEYPRESSED';
+    function ReadKey: Word; pascal; external name 'IO_READKEY';
 
     // APP
-    procedure CloseApp;
+    procedure CloseApp; pascal; external name 'IO_CLOSEAPP';
 
 implementation
 
-    function CreateFile(FileName: PChar): Word; assembler;
-        asm
-            mov ah, 3Ch
-            xor cx, cx          { a regular file }
+// Low-level routines: asm/io.asm
+{$L asm/io.obj}
 
-            // lds dx, FileName  { lds doesn't work inline }
-            mov dx, FileName    { DS:DX -> ASCIIZ filename } 
-
-            int 21h
-
-            jnc @@ok
-
-            mov ax, $FFFF       { error }
-
-        @@ok:
-        end;
-
-    ////////////////////////////////////////////
-
-    function OpenFileWrite(FileName: PChar): Word; assembler;
-        asm 
-            mov ah, 3Dh 
-            mov al, 01h          { Open existing file, write only } 
-            // lds dx, FileName  { DS:DX -> ASCIIZ filename } 
-            mov dx, FileName     { DS:DX -> ASCIIZ filename } 
-            
-            int 21h
-            
-            jnc @@OK             { CF=0 -> success } 
-            
-            mov ax, $FFFF        { error } 
-            
-        @@OK:
-            
-        end;
-
-    ////////////////////////////////////////////
-
-    function OpenFileRead(FileName: PChar): Word; assembler;
-        asm
-            mov ah, 3Dh
-            xor al, al           { Read Only }
-
-            // lds dx, FileName  { DS:DX -> имя файла }
-            mov dx, FileName     { DS:DX -> ASCIIZ filename } 
-
-            int 21h
-
-            jc @@error          { Если ошибка }
-                                { AX уже содержит Handle }
-            jmp @@exit
-
-        @@error:
-            mov ax, $FFFF        { Handle = -1 }
-
-        @@exit:
-        end;
-
-    ////////////////////////////////////////////
-
-    function WriteFile(Handle: Word; Buffer: Pointer; Count: Word): Word; assembler;
-        asm
-            mov ah,40h
-
-            mov bx,Handle
-            mov cx,Count
-
-            les dx,Buffer
-
-            int 21h
-
-            jc @@error
-
-            { AX = already keep count of writed bytes }
-            jmp @@exit
-
-        @@error:
-                mov ax,$FFFF
-
-        @@exit:
-        end;
-
-    ////////////////////////////////////////////
-
-    function ReadFile(Handle: Word; Buffer: Pointer; Count: Word): Word; assembler;
-        asm
-            push ds
-
-            mov ah,3Fh
-
-            mov bx,Handle
-            mov cx,Count
-
-            mov dx,Buffer
-
-            int $21
-
-            pop ds
-
-            jc @@error
-
-            jmp @@exit
-
-        @@error:
-            mov ax,$FFFF
-
-        @@exit:
-        end;
-
-    ////////////////////////////////////////////
-
-    function CloseFile(Handle: Word): Boolean; assembler;
-        asm
-            mov ah,3Eh
-
-            mov bx,Handle
-
-            int 21h
-
-            jc @@error
-
-            mov al,1
-            jmp @@exit
-
-        @@error:
-            xor al,al
-
-        @@exit:
-        end;
-
-    ////////////////////////////////////////////
-
-    function CheckFileExist(Name: PChar): Boolean; assembler;
-        asm
-            mov ah,3Dh
-            xor al,al          { read only }
-
-            mov dx,Name
-
-            int 21h
-
-            jc @@no
-
-            mov bx,ax           { AX = handle }
-
-            mov ah,3Eh
-            int 21h
-
-
-            mov al,1
-            jmp @@exit
-
-
-        @@no:
-            xor al,al
-
-
-        @@exit:
-        end;
-
-    ////////////////////////////////////////////
-
-    // Origin = 0 - from start of file
-    // Origin = 1 - from current position
-    // Origin = 2 - from end of file
-    function FileSeek(Handle: Word; Pos: LongInt; Origin: Byte): LongInt; assembler;
-        asm
-            mov ah,42h
-
-            mov al,Origin
-
-            mov bx,Handle
-
-            mov dx,word ptr Pos
-            mov cx,word ptr Pos+2
-
-            int 21h
-
-            jc @@error
-
-            { result DX:AX is already LongInt }
-            jmp @@exit
-
-        @@error:
-            mov ax,$FFFF
-            mov dx,$FFFF
-
-        @@exit:
-        end;
-        
-        ////////////////////////////////////////////
-
-    function FileSize(FileHandle: Word): LongInt; assembler;
-        asm
-            mov bx, FileHandle
-            mov ax, $4202
-            xor cx, cx
-            xor dx, dx
-            int $21
-            jc @error
-            jmp @exit
-
-        @error:
-            xor ax, ax
-            xor dx, dx
-
-        @exit:
-        end;
-
-    ////////////////////////////////////////////
     const
         DTA_SIZE = 43;      // DOS writes a 43-byte DTA
     
@@ -265,28 +60,15 @@ implementation
         SearchSpec: array[0..80] of Byte;
         DirSpec: array[0..80] of Byte;
 
-    function FindFirst(Pattern: PChar; var DTA: TDTA): Word; assembler;
-      asm
-        MOV BX, DTA            // near pointer to the DTA buffer
-        PUSH DS
-        PUSH SS
-        POP DS                 // DTA may live in the stack segment
-        MOV DX, BX
-        MOV AH, $1A            // set current DTA
-        INT $21
-        POP DS                 // restore data segment
+    // return 0 if a file is found, DOS error code otherwise
+    function FindFirst(Pattern: PChar; var DTA: TDTA): Word; pascal; external name 'IO_FINDFIRST';
+    function FindNext(var DTA: TDTA): Word; pascal; external name 'IO_FINDNEXT';
 
-        MOV AH, $4E            // Find First
-        MOV DX, Pattern        // DS:DX -> null-terminated pattern
-        MOV CX, $10            // attribute: include dirs (filtered by caller)
-        INT $21
-      end;
+    // Spec gets Path + '*.DLF', DTA becomes the current DOS DTA
+    function AsmCountLVLFiles(Path, Spec: PChar; DTA: Pointer): Word; pascal; external name 'IO_COUNTLVLFILES';
+    function AsmFindFiles(Path: PChar; List: Pointer; MaxCount: Word; Spec: PChar; DTA: Pointer): Word; pascal; external name 'IO_FINDFILES';
 
-    function FindNext(var DTA: TDTA): Word; assembler;
-      asm
-        MOV AH, $4F            // Find Next (continues with the current DTA)
-        INT $21
-      end;
+    ////////////////////////////////////////////
 
     function ExtractName(const DTA: TDTA): string;
       var
@@ -304,160 +86,18 @@ implementation
         ExtractName := _s;
       end;
 
+    ////////////////////////////////////////////
 
-
-    function CountLVLFiles(Path: PChar): Word; assembler;
-        asm
-            { Set DTA (AH=1Ah): DS:DX -> DTA_Buf }
-            mov ah, 1Ah
-            mov dx, offset DTA_Buf
-            int 21h
-
-            { build search spec: Path + '*.DLF' }
-            mov si, Path
-            mov di, offset SearchSpec
-            push ds
-            pop es
-            cld
-        @@CopyPath:
-            mov al, [si]
-            inc si
-            mov [di], al
-            inc di
-            test al, al
-            jnz @@CopyPath
-            dec di                      { step back over the null }
-
-            mov byte ptr [di], '*'
-            inc di
-            mov byte ptr [di], '.'
-            inc di
-            mov byte ptr [di], 'D'
-            inc di
-            mov byte ptr [di], 'L'
-            inc di
-            mov byte ptr [di], 'F'
-            inc di
-            mov byte ptr [di], 0
-
-            { FindFirst (AH=4Eh): DS:DX -> search spec, CX = attributes ($10 = also dirs) }
-            mov ah, 4Eh
-            mov dx, offset SearchSpec
-            mov cx, $10
-            int 21h
-            jnc @@HaveFirst
-
-            xor ax, ax                      { no files }
-            jmp @@Exit
-
-        @@HaveFirst:
-            xor dx, dx                      { DX = counter }
-
-        @@Loop:
-            { skip directories via the attribute byte at DTA+21 }
-            test byte ptr [DTA_Buf + 21], $10
-            jnz @@Next
-            inc dx
-
-        @@Next:
-            mov ah, 4Fh                     { FindNext }
-            int 21h
-            jnc @@Loop
-
-            mov ax, dx
-
-        @@Exit:
+    function CountLVLFiles(Path: PChar): Word;
+        begin
+            Result := AsmCountLVLFiles(Path, @SearchSpec[0], @DTA_Buf[0]);
         end;
 
-    function FindFiles(Path: PChar; List: Pointer; MaxCount: Word): Word; assembler;
-        asm
-            { Set DTA (AH=1Ah): DS:DX -> DTA_Buf }
-            mov ah, 1Ah
-            mov dx, offset DTA_Buf
-            int 21h
+    ////////////////////////////////////////////
 
-            { build search spec: Path + '*.DLF' }
-            mov si, Path
-            mov di, offset SearchSpec
-            push ds
-            pop es
-            cld
-        @@CopyPath:
-            mov al, [si]
-            inc si
-            mov [di], al
-            inc di
-            test al, al
-            jnz @@CopyPath
-            dec di                      { step back over the null }
-
-            mov byte ptr [di], '*'
-            inc di
-            mov byte ptr [di], '.'
-            inc di
-            mov byte ptr [di], 'D'
-            inc di
-            mov byte ptr [di], 'L'
-            inc di
-            mov byte ptr [di], 'F'
-            inc di
-            mov byte ptr [di], 0
-
-            { FindFirst (AH=4Eh): DS:DX -> search spec, CX = attributes ($10 = also dirs) }
-            mov ah, 4Eh
-            mov dx, offset SearchSpec
-            mov cx, $10
-            int 21h
-            jnc @@HaveFirst
-
-            xor ax, ax                      { no files }
-            jmp @@Exit
-
-        @@HaveFirst:
-            xor dx, dx                      { DX = count of stored names }
-            mov bx, List                    { BX = output pointer (element = String[12]) }
-
-        @@Loop:
-            { skip directories: DTA+21 holds the found file attributes }
-            test byte ptr [DTA_Buf + 21], $10
-            jnz @@Next
-
-            cmp dx, MaxCount                { buffer full? }
-            jae @@Done
-
-            { measure filename length (DTA+30.., ASCIIZ, max 12) }
-            mov si, offset DTA_Buf + 30
-            xor cx, cx
-        @@LenLoop:
-            cmp byte ptr [si], 0
-            je @@LenDone
-            inc si
-            inc cx
-            cmp cx, 12
-            jb @@LenLoop
-        @@LenDone:
-            { store ShortString[12]: length byte + chars }
-            mov byte ptr [bx], cl
-            mov di, bx
-            inc di
-            mov si, offset DTA_Buf + 30     { reset source to filename start }
-            push ds
-            pop es
-            cld
-            rep movsb
-
-            add bx, 13                      { next String[12] element }
-            inc dx                          { count++ }
-
-        @@Next:
-            mov ah, 4Fh                     { FindNext }
-            int 21h
-            jnc @@Loop
-
-        @@Done:
-            mov ax, dx
-
-        @@Exit:
+    function FindFiles(Path: PChar; List: Pointer; MaxCount: Word): Word;
+        begin
+            Result := AsmFindFiles(Path, List, MaxCount, @SearchSpec[0], @DTA_Buf[0]);
         end;
 
     ////////////////////////////////////////////
@@ -498,41 +138,6 @@ implementation
         
         Result := _arr;
       end;
-
-    ////////////////////////////////////////////
-
-    function KeyPressed: Boolean; assembler;
-        asm
-            mov ah,01h
-            int 16h
-
-            jz @@NoKey
-
-            mov al,1
-            jmp @@Exit
-
-        @@NoKey:
-            xor al,al
-
-        @@Exit:
-        end;
-
-    ////////////////////////////////////////////
-
-    function ReadKey: Word; assembler;
-        asm
-            xor ah, ah
-            int 16h
-            xor ah, ah          { keep only the ASCII code, result 0..255 }
-        end;
-
-    ////////////////////////////////////////////
-
-    procedure CloseApp; assembler;
-        asm
-            mov ax, 4c00h
-            int 21h
-        end;    
 
     ////////////////////////////////////////////
 

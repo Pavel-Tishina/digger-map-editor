@@ -59,7 +59,7 @@ implementation
               end;
 
           FilledSquare(_x, _y, _s, 7, 0);          
-          _img.Draw(_x + 1, _y + 1); // TODO !!!! Hallo! Ich habe an dieser Zeile aufgehört.
+          _img.Draw2(_x + 1, _y + 1); // TODO !!!! Hallo! Ich habe an dieser Zeile aufgehört.
         end
 
       else

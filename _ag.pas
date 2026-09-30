@@ -22,8 +22,8 @@ type
     function GetTrasperentColor: Byte;
     
     function GetImg2: ImageData;
-    function GetImg: ByteData;
-    procedure Draw(x, y: Word);
+    // function GetImg: ByteData;
+    // procedure Draw(x, y: Word);
     procedure Draw2(x, y: Word);
 
     procedure Debug;
@@ -252,22 +252,28 @@ implementation
 
     procedure ArchiveGraphicFile.Draw2(x, y: Word);
       var 
-        _xm, _ym, _xi, _yi, _ycalc : Word;
+        _xi, _yi, _ycalc, _p : Word;
         _img : ImageData;
       
       begin
         _img := GetImg2;
 
-        _xm := High(_img);
-        _ym := High(_img[0]);
-
-        for _yi := 0 to _ym do
+        // GetImg2 fills columns 0..xm-1 and pixcount pixels only,
+        // the last column / row of the array are padding
+        _p := 0;
+        for _yi := 0 to ym do
           begin
             _ycalc := LineOffset[y + _yi];
             
-            for _xi := 0 to _xm do
-              if _img[_xi, _yi] <> bg_color then
-                PutPixelOffset(_ycalc + x + _xi, _img[_xi, _yi]);  
+            for _xi := 0 to xm - 1 do
+              begin
+                if _p >= pixcount then exit;
+
+                if _img[_xi, _yi] <> bg_color then
+                  PutPixelOffset(_ycalc + x + _xi, _img[_xi, _yi]);
+
+                inc(_p);
+              end;
           end;
 
       end;

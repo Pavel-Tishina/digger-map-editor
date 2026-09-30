@@ -18,11 +18,11 @@ implementation
   procedure DrawIcon(x, y : Word; t : CellType);
     begin
       case t of
-        Gold:    _gold.Draw(x, y);
-        Hole:    _hole.Draw(x, y);
-        Gem:     _gem.Draw(x, y);
-        TonnelH: _th.Draw(x, y);
-        TonnelV: _tv.Draw(x, y);
+        Gold:    _gold.Draw2(x, y);
+        Hole:    _hole.Draw2(x, y);
+        Gem:     _gem.Draw2(x, y);
+        TonnelH: _th.Draw2(x, y);
+        TonnelV: _tv.Draw2(x, y);
       end;
     end;
 
