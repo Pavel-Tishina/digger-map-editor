@@ -28,7 +28,7 @@ uses
     // and stores their names into the caller buffer List, which must be an
     // array of String[12] (each element 13 bytes). Returns the number of
     // stored names.
-    function FindFiles(Path: PChar; List: Pointer; MaxCount: Word): Word;
+    function FindFiles(Path: PChar; List: Pointer; MaxCount: Word): Word; // TODO: Delete it?
 
     function FindFiles2(Path: ShortString): ListOfFileNames;
 

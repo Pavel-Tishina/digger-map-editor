@@ -11,53 +11,6 @@ type
     Btn: Word;
   end;
 
-type
-  TCursor = record
-    Width : byte;
-    Height: byte;
-    Mask  : array[0..31,0..31] of byte;
-  end;
-
-const
-  CursorMaskA: array[0..31] of Word = (
-
-    { AND mask }
-    $F800,
-    $E000,
-    $F000,
-    $B800,
-    $9C78,
-    $0CB4,
-    $014A,
-    $0285,
-    $0495,
-    $0849,
-    $1031,
-    $0F81,
-    $0042,
-    $0F84,
-    $0408,
-    $03F0,
-
-    { XOR mask }
-    $07FF,
-    $1FFF,
-    $0FFF,
-    $47FF,
-    $6387,
-    $F34B,
-    $FEB5,
-    $FD7A,
-    $FB6A,
-    $F7B6,
-    $EFCE,
-    $F07E,
-    $FFBD,
-    $F07B,
-    $FBF7,
-    $FC0F
-  );
-
 var
   MyMouse: TMouseState; // cuz nasty error "Duplicate" identifier "mouse" is here... damned Pascal namespaces
 

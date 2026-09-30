@@ -29,7 +29,6 @@ type
       _sys_btns: array of IconButton;
       _files_list: TFileListObj;
       _wtype: ModalType;
-      // _bkg_area: ImageData;
       _bkg_area: TBackGround;
 
       _title: String;
@@ -99,7 +98,6 @@ implementation
 
           ModalType.YesNoWindow:
             begin
-              // writeln(_x, ' ', _xm);
               setLength(_buttons, 2);
 
               _buttons[0] := TModalButton.Create(_x + _xx - (_btn_x div 2), _yy, _btn_x, _YES);
@@ -243,25 +241,13 @@ implementation
 
     function TModal.IsShown: Boolean;
       begin
-        // Result := length(_bkg_area) > 0;
         Result := (_bkg_area <> nil) AND (NOT _bkg_area.IsNull);
       end;
 
      // // // // // // // // // // //
 
     procedure TModal.Hide;
-      var
-        _xi, _yi, _yc: Word;
-
       begin
-        // for _yi := _y to _ym do
-        //   begin
-        //     _yc := _yi - _y;
-        //     for _xi := _x to _xm do
-        //       PutPixelOffset(LineOffset[_yi] + _xi, _bkg_area[_xi - _x, _yc]);
-        //   end;
-
-        // setLength(_bkg_area, 0);
         if _bkg_area = nil then exit;
 
         _bkg_area.Draw(_x, _y);
@@ -273,11 +259,10 @@ implementation
 
     procedure TModal.Show;
       var
-        _xi, _yi, _yc: Word;
+        _xi, _yi: Word;
         _i: Byte;
 
       begin
-        // setLength(_bkg_area, (_xm - _x) + 1, (_ym - _y) + 1);
         if _bkg_area <> nil then exit; // already shown
 
         _bkg_area := TBackGround.Create(_x, _y, _xm, _ym);
@@ -287,14 +272,6 @@ implementation
             _bkg_area := nil;
             exit;
           end;
-
-        // !!!!!
-        // for _yi := _y to _ym do
-        //   begin
-        //     _yc := _yi - _y;
-        //     for _xi := _x to _xm do
-        //       _bkg_area[_xi - _x, _yc] := GetPixelOffset(LineOffset[_yi] + _xi);
-        //   end;
 
         FilledRectangle(_x, _y, _xm, _ym, 0, 8);
 
@@ -325,7 +302,6 @@ implementation
             for _i := 0 to length(_sys_btns) - 1 do
               _sys_btns[_i].Draw;
           end;
-
         
       end;
 
@@ -418,9 +394,9 @@ implementation
           _pre_lb := MyMouse.Btn;
         until (NOT IsShown);
 
-        // MouseHide; // caller redraws the map, then shows the cursor again
         SetNormal;
         Result := _r;
+        
       end;
 
      

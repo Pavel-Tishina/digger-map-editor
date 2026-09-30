@@ -10,7 +10,6 @@ interface
   function LBtnRelease(b : Word; prev : Byte): Boolean;
   function RBtnRelease(b : Word; prev : Byte): Boolean;
 
-  // function UpCase(k: Byte): Byte;
   function UpCase(c: Char): Char;
 
   generic function IfElse<T>(b: Boolean; _if, _else: T): T;
@@ -42,14 +41,6 @@ implementation
       RBtnRelease := ((b and 2) = 0) AND ((prev and 2) <> 0);
     end;
 
-  // function UpCase(k: Byte): Byte;
-  //   begin
-  //     if btwn(k, 97, 122) then
-  //       dec(k, 32);
-
-  //     Result := k;
-  //   end;
-
   function UpCase(c: Char): Char;
     var 
       _c : Byte;
@@ -69,33 +60,5 @@ implementation
       else
         Result := _else;
     end;
-
-// {$asmmode intel}
-// function IsBetweenWord(X, A, B: Word): Boolean; assembler;
-// asm
-//   mov ax, X
-//   cmp ax, A
-//   jb  @False    // Jump if Below (unsigned <)
-//   cmp ax, B
-//   ja  @False    // Jump if Above (unsigned >)
-//   mov al, 1     // Result is True
-//   ret
-// @False:
-//   xor al, al    // Result is False
-// end;
-
-// {$asmmode intel}
-// function IsBetweenByte(X, A, B: Word): Boolean; assembler;
-// asm
-//   mov ax, X
-//   cmp ax, A
-//   jb  @False    // Jump if Below (unsigned <)
-//   cmp ax, B
-//   ja  @False    // Jump if Above (unsigned >)
-//   mov al, 1     // Result is True
-//   ret
-// @False:
-//   xor al, al    // Result is False
-// end;
 
 end.

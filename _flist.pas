@@ -41,7 +41,7 @@ implementation
 
   constructor TFileListObj.Create(x, y: Word);
     var
-      __n, __x, __y : Word;
+      __n, __y : Word;
       __l : Byte;
     begin
       __n := CountLVLFiles('\MAPS\'#0);
@@ -115,13 +115,12 @@ implementation
   procedure TFileListObj.SelectFile(x, y: Word);
     var
       __i : Byte;
-      __n, __p : Word;
+      __p : Word;
 
     begin
       if NOT btwn(x, _x, _xm) then
         exit;
 
-      __n := length(_files);
       __p := _p * _files_frame;
       for __i := 0 to length(_f_lines) - 1 do
         if _f_lines[__i].IsClick(x, y) and (__p + __i < length(_files)) and (__i <> _s) then

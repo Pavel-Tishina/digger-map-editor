@@ -11,6 +11,9 @@ interface
 uses
   draw, _types;
 
+const
+  VIDEO_SEG = $A000;
+
 type
   TBackGround = class
     _seg : Word;   // DOS memory block segment, 0 = not allocated
@@ -81,10 +84,9 @@ implementation
   // // // // // // // //
 
   constructor TBackGround.Create(x1, y1, x2, y2: Word);
-    const
-      VIDEO_SEG = $A000;
     var
       _y, _o : Word;
+
     begin
       // bounds are inclusive
       _w := x2 - x1 + 1;
@@ -104,8 +106,6 @@ implementation
   // // // // // // // //
 
   procedure TBackGround.Draw(x, y: Word);
-    const
-      VIDEO_SEG = $A000;
     var
       _y, _o : Word;
     begin

@@ -51,7 +51,7 @@ begin
   MyMouse.Btn := 0;
 
   SetVideoMode13h;
-  SetBackgroundColor(8);
+  // SetBackgroundColor(8);
 
   Grid_LVL := LevelGrid.Init(2, 27, 15, 10);
   Grid_LVL.Draw;

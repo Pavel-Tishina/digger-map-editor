@@ -22,7 +22,6 @@ type
       _cells: Cells;
 
     constructor Init(xpos, ypos: Word; xc, yc: Byte);
-    // destructor Done;
 
     procedure Draw;
     procedure DrawCell(x, y: Byte);
@@ -60,8 +59,6 @@ implementation
       _xm := xpos + (xc * _grid_size);
       _ym := ypos + (yc * _grid_size);
 
-      // writeln(_x, ' ', _y, ' ', _xm, ' ', _ym);
-
       setLength(_cells, xc, yc);
 
       for Y :=0 to _yn do
@@ -72,7 +69,6 @@ implementation
           _cells[X, Y] := LevelCell.Init(X, Y, xpos + (_grid_size * X), _calcY, CellType.Field);
 
       end;
-
     end;
 
     /// /// /// /// /// ///
@@ -113,17 +109,8 @@ implementation
     /// /// /// /// /// ///
 
   function LevelGrid.GetClickedCell(x, y: Word): LevelCell;
-    var _xxx, _yyy: Byte;
-
     begin
-      // if NOT IsClick(x, y) then
-      //   exit(LevelCell.Init(0, 0, 0, 0, CellType.Error));
-      
-      _xxx := GetCellCoord(x, _x, _xn);
-      _yyy := GetCellCoord(y, _y, _yn);
-      // writeln('xxx ', _xxx, ' --- yyy ', _yyy);
-      Result := _cells[_xxx, _yyy];
-
+      Result := _cells[GetCellCoord(x, _x, _xn), GetCellCoord(y, _y, _yn)];
     end;  
 
     /// /// /// /// /// ///
@@ -134,7 +121,6 @@ implementation
 
     begin
       _lvl_cell := GetClickedCell(x, y);
-      // writeln(_lvl_cell.GetType);
 
       if (_lvl_cell.GetType <> CellType.Error) then
         GetClickedCellType := _lvl_cell.GetType;

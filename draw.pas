@@ -18,13 +18,7 @@ interface
     procedure FilledRectangle(x1, y1, x2, y2: Word; c, cf: Byte);
     procedure Line(X1, Y1, X2, Y2: Integer; Color: Byte);
 
-    procedure SetBackgroundColor(c: Byte);
-
-    function GetPixel(x, y: Word): Byte;
     function GetPixelOffset(pixel_offset: Word): Byte;
-
-    procedure SaveCursorBackground(X, Y: Word);
-    procedure RestoreCursorBackground(X, Y: Word);
 
 implementation
     const
@@ -32,36 +26,6 @@ implementation
 
     var
         y: Word;
-        CursorBack: array[0..15, 0..15] of Byte;
-
-
-    // procedure PutPixel(x, y: Word; color: Byte); assembler;
-    //     asm
-    //         push bp
-    //         mov bp,sp
-
-    //         push es
-    //         push di
-
-    //         mov ax,[bp+6]     { y }
-    //         mov bx,320
-    //         mul bx
-
-    //         add ax,[bp+4]     { x }
-
-    //         mov di,ax
-
-    //         mov ax,VideoSeg
-    //         mov es,ax
-
-    //         mov ax,[bp+8]     { color }
-    //         mov es:[di],al
-
-    //         pop di
-    //         pop es
-    //         pop bp
-
-    //     end;
 
     ////////////////////////////////////////////
 
@@ -262,31 +226,6 @@ implementation
 
     ////////////////////////////////////////////
 
-    function GetPixel(X, Y: Word): Byte; assembler;
-        asm
-            push ds
-
-            mov ax, seg LineOffset
-            mov ds, ax
-
-            mov bx, Y
-            shl bx, 1
-            mov si, bx
-            mov bx, LineOffset[si]
-
-            add bx, X
-
-            mov ax, VideoSeg
-            mov ds, ax
-
-            mov si, bx
-            mov al, [si]
-
-            pop ds
-        end;
-
-    ////////////////////////////////////////////        
-
     function GetPixelOffset(pixel_offset: Word): Byte; assembler;
         asm
             push ds
@@ -297,119 +236,6 @@ implementation
             mov bx, pixel_offset
             mov al, [bx]
 
-            pop ds
-        end;
-
-    ////////////////////////////////////////////
-
-    // procedure SetBackgroundColor(c: Byte); assembler;
-    //     asm
-    //         mov ax, VideoSeg    // The offset to video memory
-    //         mov es, ax          // We load it to ES through AX, becouse immediate operation is not allowed on ES
-    //         mov ax, 0           // 0 will put it in top left corner. To put it in top right corner load with 320, in the middle of the screen 32010.
-    //         mov di, ax          // load Destination Index register with ax value (the coords to put the pixel)
-    //         // mov dl, [c]      // Dark Grey color.
-    //         mov dl, 8           // Dark Grey color.
-    //         mov [es:di], dl     // And we put the pixel
-    //     end;    
-
-
-    ////////////////////////////////////////////
-
-    procedure SetBackgroundColor(c: Byte);
-        var x, y: Word;
-
-        begin
-            for y := 0 to 199 do
-                for x := 0 to 319 do
-                    PutPixelOffset(LineOffset[y] + x, c);
-                    // Line(0, y, 319, y, c);
-
-        end;
-
-    ////////////////////////////////////////////
-
-    procedure SaveCursorBackground(X, Y: Word); assembler;
-        asm
-            push ds
-            push es
-
-            mov ax, VideoSeg
-            mov ds, ax
-
-            mov ax, seg CursorBack
-            mov es, ax
-
-            xor dx, dx                // Row = 0
-
-        @@NextRow:
-
-            mov bx, Y
-            add bx, dx
-            shl bx, 1
-
-            mov si, LineOffset[bx]
-            add si, X
-
-            mov di, dx
-            // shl di, 4                 // Row * 16
-            mov si, dx
-            shl si,1
-            shl si,1
-            shl si,1
-            shl si,1
-
-            mov cx, 16
-            rep movsb
-
-            inc dx
-            cmp dx, 16
-            jb @@NextRow
-
-            pop es
-            pop ds
-        end;
-
-    ////////////////////////////////////////////
-
-    procedure RestoreCursorBackground(X, Y: Word); assembler;
-        asm
-            push ds
-            push es
-
-            mov ax, seg CursorBack
-            mov ds, ax
-
-            mov ax, VideoSeg
-            mov es, ax
-
-            xor dx, dx
-
-        @@NextRow:
-
-            mov si, dx
-            // shl si, 4                 // Row * 16
-            mov si, dx
-            shl si,1
-            shl si,1
-            shl si,1
-            shl si,1
-
-            mov bx, Y
-            add bx, dx
-            shl bx, 1
-
-            mov di, LineOffset[bx]
-            add di, X
-
-            mov cx, 16
-            rep movsb
-
-            inc dx
-            cmp dx, 16
-            jb @@NextRow
-
-            pop es
             pop ds
         end;
 

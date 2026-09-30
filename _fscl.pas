@@ -47,7 +47,7 @@ implementation
 
   constructor TFileScroll.Create(x, y, files: Word);
     var
-      _i, _j, _c : Byte;
+      _i, _j : Byte;
       _n  : Word;
       _r  : Real;
 
@@ -69,9 +69,7 @@ implementation
       _n := (files div _files_window_m) + 1;
       setLength(_files_idexes, _n, _files_window_m);
       setLength(_cube_y, _n);
-      _c := (_scroll_ym div _n) + 1;
       _r := _scroll_ym / _n;
-      // _cube_ym := trunc((_scroll_ym / files) * _n);
       _cube_ym := trunc(_scroll_ym / _n);
       
         
@@ -87,7 +85,6 @@ implementation
               _files_idexes[_i, _j] := _n + _j;
         end;
 
-      // writeln(_x, ' ', _y, ' ', _xm, ' ', _ym);
     end;
 
   // // // // // // // // //
@@ -123,9 +120,7 @@ implementation
   // // // // // // // // //
 
   procedure TFileScroll.DrawScrollButtonArrow(isUp: Boolean);
-    var
-      _q, _i : ShortInt;
-      __x, __y : Word;
+    var __y : Word;
 
     begin
       if (isUp = True) then
@@ -206,8 +201,6 @@ implementation
   // // // // // // // // //
 
   function TFileScroll.Action(x, y: Word): ShortInt;
-    var
-      _empty : array of Word;
     begin
       if _show and IsClick(x, y) and (IsUpClick(y) or IsDownClick(y)) then
         begin

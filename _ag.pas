@@ -36,7 +36,7 @@ implementation
 
     constructor ArchiveGraphicFile.Init(file_name: PChar);
         var 
-          fileHandle, fpos: Word;
+          fileHandle : Word;
           bytes_4_pal, n, i, _colors, bg_color_number: Byte;
           r_data: ByteData;
           f_size, image_data_size: LongInt;
@@ -47,14 +47,11 @@ implementation
 
           setLength(r_data, 5);                      // read header data
           FileSeek(fileHandle, 0, 0);
-          fpos := ReadFile(fileHandle, @r_data[0], 5);
+          ReadFile(fileHandle, @r_data[0], 5);
           
           ver := r_data[0] shr 4;
           colors := r_data[0] and $0F;
           _colors := colors;
-
-          // bg_color_number := r_data[2] shr 4;
-          //xoffset := ((Word(r_data[2]) and $0F) shl 8) or r_data[1];
 
           // REFACTOR THIS!!!!!
           xoffset := Word(r_data[1]) or (Word(r_data[2]) shl 8);
@@ -79,7 +76,7 @@ implementation
           
           setLength(palette, colors);                       // read palette
           setLength(r_data, bytes_4_pal);
-          fpos := ReadFile(fileHandle, @r_data[0], bytes_4_pal);
+          ReadFile(fileHandle, @r_data[0], bytes_4_pal);
 
           i := 0;
           for n := 0 to bytes_4_pal - 1 do
@@ -96,15 +93,13 @@ implementation
               inc(i)
             end;
 
-          //bg_color := palette[bg_color_number];
           bg_color := bg_color_number;
 
           image_data_size := f_size - 5 - bytes_4_pal;         // read image data
           setLength(data, image_data_size);
 
-          fpos := ReadFile(fileHandle, @data[0], image_data_size);
+          ReadFile(fileHandle, @data[0], image_data_size);
           
-          // Debug;
           CloseFile(fileHandle);
         end;
 
@@ -154,7 +149,7 @@ implementation
               begin
                 if (_n + 1 >= length(data)) then break;
                 _r := ((data[_n] and $7F) shl (8 - color_bits)) or (data[_n + 1] shr color_bits);
-                _n := _n + 1;
+                inc(_n);
               end;
             
             _c := palette[data[_n] and _nb];
@@ -181,80 +176,78 @@ implementation
         Result := _img;
       end;
     
-    function ArchiveGraphicFile.GetImg: ByteData;
-      var
-        // _img : ImageData;
-        _img : ByteData;
-        _l, _c, _nb : Byte;
-        _x, _n, _r, _i: Word;
+    // function ArchiveGraphicFile.GetImg: ByteData;
+    //   var
+    //     _img : ByteData;
+    //     _l, _c, _nb : Byte;
+    //     _x, _n, _r, _i: Word;
 
-      begin
-        // setLength(_img, xm + 1, ym + 1);
-        setLength(_img, pixcount);
-        _nb := (1 shl color_bits) - 1;
-        _x := 0;
+    //   begin
+    //     setLength(_img, pixcount);
+    //     _nb := (1 shl color_bits) - 1;
+    //     _x := 0;
 
-        _n := 0;
-        while (_n < length(data)) do
-          begin
-            _l := ((data[_n] shr 7) and 1);
+    //     _n := 0;
+    //     while (_n < length(data)) do
+    //       begin
+    //         _l := ((data[_n] shr 7) and 1);
 
-            if (_l = 0) then
-              begin    
-                _r := (data[_n] shr color_bits) and ((1 shl (7 - color_bits)) - 1);
-              end
-            else
-              begin
-                if (_n + 1 >= length(data)) then break;
-                _r := ((data[_n] and $7F) shl (8 - color_bits)) or (data[_n + 1] shr color_bits);
-                inc(_n);
-              end;
+    //         if (_l = 0) then
+    //           begin    
+    //             _r := (data[_n] shr color_bits) and ((1 shl (7 - color_bits)) - 1);
+    //           end
+    //         else
+    //           begin
+    //             if (_n + 1 >= length(data)) then break;
+    //             _r := ((data[_n] and $7F) shl (8 - color_bits)) or (data[_n + 1] shr color_bits);
+    //             inc(_n);
+    //           end;
             
-            _c := palette[data[_n] and _nb];
+    //         _c := palette[data[_n] and _nb];
 
-            _i := 1;
-            while (_i <= _r) do
-              begin
-                if (_x < pixcount) then
-                  _img[_x] := _c;
+    //         _i := 1;
+    //         while (_i <= _r) do
+    //           begin
+    //             if (_x < pixcount) then
+    //               _img[_x] := _c;
 
-                inc(_x);
-                inc(_i);
-              end;
+    //             inc(_x);
+    //             inc(_i);
+    //           end;
 
-            inc(_n);
-          end;
+    //         inc(_n);
+    //       end;
 
-        GetImg := _img;
-      end;
+    //     GetImg := _img;
+    //   end;
 
-    procedure ArchiveGraphicFile.Draw(x, y: Word);
-      var 
-        _i : Integer;
-        _xm, _ym, _ycalc : Word;
-        _img : ByteData;
+    // procedure ArchiveGraphicFile.Draw(x, y: Word);
+    //   var 
+    //     _i : Integer;
+    //     _xm, _ym, _ycalc : Word;
+    //     _img : ByteData;
       
-      begin
-        _img := GetImg;
+    //   begin
+    //     _img := GetImg;
 
-        _xm := 0;
-        _ym := 0;
-        _ycalc := LineOffset[y + _ym];
-        for _i := 0 to length(_img) - 1 do
-          begin
-            if (_img[_i] <> bg_color) then
-              PutPixelOffset(_ycalc + x + _xm, _img[_i]);
+    //     _xm := 0;
+    //     _ym := 0;
+    //     _ycalc := LineOffset[y + _ym];
+    //     for _i := 0 to length(_img) - 1 do
+    //       begin
+    //         if (_img[_i] <> bg_color) then
+    //           PutPixelOffset(_ycalc + x + _xm, _img[_i]);
 
-            inc(_xm);
-            if (_xm = xoffset) then
-              begin
-                _xm := 0;
-                inc(_ym);
-                _ycalc := LineOffset[y + _ym];
-              end;
-          end;
+    //         inc(_xm);
+    //         if (_xm = xoffset) then
+    //           begin
+    //             _xm := 0;
+    //             inc(_ym);
+    //             _ycalc := LineOffset[y + _ym];
+    //           end;
+    //       end;
 
-      end;
+    //   end;
 
 
     procedure ArchiveGraphicFile.Draw2(x, y: Word);
@@ -273,7 +266,7 @@ implementation
             _ycalc := LineOffset[y + _yi];
             
             for _xi := 0 to _xm do
-              // if _img[_xi, _yi] <> bg_color then
+              if _img[_xi, _yi] <> bg_color then
                 PutPixelOffset(_ycalc + x + _xi, _img[_xi, _yi]);  
           end;
 
