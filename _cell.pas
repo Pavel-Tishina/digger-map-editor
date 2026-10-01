@@ -1,4 +1,5 @@
 {$MODE OBJFPC}
+{$INLINE ON}
 
 unit _cell; 
 
@@ -10,7 +11,7 @@ uses
 type
   LevelCell = class
     const
-      _r : Byte = 17;
+      _r = 17;
 
     var  
       _xi, _yi: Byte;
@@ -20,11 +21,11 @@ type
     constructor Init(xi, yi : Byte; x, y: Word; t: CellType);
 
     procedure Draw;
-    procedure SetType(t: CellType);
-    function GetType: CellType;
+    procedure SetType(t: CellType); inline;
+    function GetType: CellType; inline;
 
-    function X: Word;
-    function Y: Word;
+    function X: Word; inline;
+    function Y: Word; inline;
   end;
 
 implementation

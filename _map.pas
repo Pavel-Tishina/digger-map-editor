@@ -1,4 +1,5 @@
 {$MODE OBJFPC}
+{$INLINE ON}
 
 unit _map;
 
@@ -14,9 +15,10 @@ type
     _lvl: array[0..14, 0..9] of CellType;
 
     constructor Init;
+    procedure Clear;
     
-    procedure SetType(x, y: Byte; t: CellType);
-    function GetType(x, y: Byte): CellType;
+    procedure SetType(x, y: Byte; t: CellType); inline;
+    function GetType(x, y: Byte): CellType; inline;
   end;
 
   /// LevelMap ///
@@ -24,18 +26,20 @@ type
 type
   LevelMap = class(TGUI)
     const
-      _xm_c   : Byte = 16;
-      _ym_c   : Byte = 11;
-      _lvl_n  : Byte = 8;
-      _dir : ShortString = '\MAPS\';
+      _xm_c   = 16;
+      _ym_c   = 11;
+      _lvl_n  = 8;
+      _dir = '\MAPS\';
 
     var
       _active: Byte;
       _levels: array[0..7] of Level;
 
     constructor Init(xpos, ypos: Word);
+    procedure Clear;
 
     procedure Draw;
+    procedure DrawFrames;
     procedure DrawLvl(n: Byte);
     
     procedure SetType(x, y: Byte; t: CellType);
@@ -46,8 +50,8 @@ type
     function GetLevel(n : Byte): Level;
     function GetLevel: Level;
 
-    procedure LoadMap(f: String);
-    procedure SaveMap(f: String);
+    procedure LoadMap(const f: String);
+    procedure SaveMap(const f: String);
   end;
 
     
@@ -57,8 +61,13 @@ implementation
     /// Level Impl ///
 
   constructor Level.Init;
-  var
-    x, y: Byte;
+    begin
+      Clear;
+    end;
+
+  procedure Level.Clear;
+    var
+      x, y: Byte;
 
     begin
       for y := 0 to 9 do
@@ -75,15 +84,18 @@ implementation
   
   function Level.GetType(x, y: Byte): CellType;
     begin
-      Result := specialize IfElse<CellType>(btwn(x, 0, 14) AND btwn(y, 0, 9), _lvl[x, y], CellType.Error);
+      // not IfElse: it would read _lvl[x, y] before the bounds check
+      if btwn(x, 0, 14) AND btwn(y, 0, 9) then
+        Result := _lvl[x, y]
+      else
+        Result := CellType.Error;
     end;
 
       /// Level Impl ///
 
     constructor LevelMap.Init(xpos, ypos: Word);
       var
-        _FN, _FC : Byte;
-        _FX : Word;
+        _FN : Byte;
 
       begin
         _x := xpos;
@@ -94,14 +106,41 @@ implementation
         _active := 0;
 
         for _FN := 0 to _lvl_n - 1 do
+          _levels[_FN] := Level.Init;
+
+        DrawFrames;
+      end;
+
+    // // // // // // // // // //
+
+    // empty map, first level active - the objects are reused, not recreated
+    procedure LevelMap.Clear;
+      var
+        _FN : Byte;
+
+      begin
+        for _FN := 0 to _lvl_n - 1 do
+          _levels[_FN].Clear;
+
+        _active := 0;
+        DrawFrames;
+      end;
+
+    // // // // // // // // // //
+
+    procedure LevelMap.DrawFrames;
+      var
+        _FN, _FC : Byte;
+        _FX : Word;
+
+      begin
+        for _FN := 0 to _lvl_n - 1 do
           begin
-            _levels[_FN] := Level.Init;
             _FC := specialize IfElse<Byte>(_FN = _active, 15, 7);
           
             _FX := _x + (_xm_c * _FN);
             FilledRectangle(_FX, _y, _FX + _xm_c, _ym, _FC, 10);
           end;
-
       end;
 
     // // // // // // // // // //
@@ -120,17 +159,14 @@ implementation
     procedure LevelMap.DrawLvl(n: Byte);
       var
         _FX, _FY : Byte;
-        _FCY : Word;
+        _buf : array[0..9, 0..14] of Byte;   // 15 x 10 thumbnail, [y, x]
       
       begin
         for _FY := 0 to 9 do
-          begin
-            _FCY := LineOffset[_y + 1 + _FY];
-            
-            for _FX := 0 to 14 do
-              PutPixelOffset(_FCY + _x + 1 + (_xm_c * n) + _FX, CellTypeMapPixel(_levels[n].GetType(_FX, _FY)));  
+          for _FX := 0 to 14 do
+            _buf[_FY, _FX] := CellTypeMapPixel(_levels[n]._lvl[_FX, _FY]);
 
-          end;
+        RestoreRect(@_buf, LineOffset[_y + 1] + _x + 1 + (_xm_c * n), 15, 10);
       end;    
 
     // // // // // // // // // //
@@ -168,10 +204,11 @@ implementation
 
     function LevelMap.GetLevel(n : Byte): Level;
       begin
+        // nil for a wrong n: a new Level here was never freed
         if btwn(n, 0, 7) then
           Result := _levels[n]
         else
-          Result := Level.Init;
+          Result := nil;
       end;
 
     // // // // // // // // // //
@@ -183,14 +220,15 @@ implementation
 
     // // // // // // // // // //
 
-    procedure LevelMap.LoadMap(f: String);
+    procedure LevelMap.LoadMap(const f: String);
       var 
         _lvl_i, _xl, _yl: Byte;
         _content: array[0..1201] of Char;
         _h, _i, _l, _start : Word;
+        _path : String[40];
       begin
-        f := _dir + f + #0;
-        _h := OpenFileRead(@f[1]);
+        _path := _dir + f + #0;
+        _h := OpenFileRead(@_path[1]);
         if _h = $FFFF then exit;
 
         _l := ReadFile(_h, @_content, SizeOf(_content));
@@ -237,11 +275,12 @@ implementation
 
     // // // // // // // // // //
 
-    procedure LevelMap.SaveMap(f: String);
+    procedure LevelMap.SaveMap(const f: String);
       var 
         _lvl_i, _xl, _yl: Byte;
         _content: array[0..1201] of Char;
         _h, _i : Word;
+        _path : String[40];
       begin
         
         _content[0] := Chr(1);
@@ -255,8 +294,8 @@ implementation
                 inc(_i);
               end; 
 
-        f := _dir + f + #0;
-        _h := CreateFile(@f[1]);
+        _path := _dir + f + #0;
+        _h := CreateFile(@_path[1]);
         if _h = $FFFF then exit;
 
         WriteFile(_h, @_content, SizeOf(_content));

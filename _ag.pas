@@ -1,4 +1,5 @@
 {$MODE OBJFPC}
+{$INLINE ON}
 
 unit _ag;
 
@@ -13,13 +14,14 @@ type
     ver, colors, bg_color, color_bits: Byte;
     xoffset, pixcount, ym, xm: Word;
     palette, data: ByteData;
+    pixels: ByteData;     // decoded image, xm pixels per row, pixcount pixels
 
     constructor Init(file_name: PChar);
 
-    function GetXOffset: Word;
-    function GetYM: Word;
-    function GetPixelCount: Word;
-    function GetTrasperentColor: Byte;
+    function GetXOffset: Word; inline;
+    function GetYM: Word; inline;
+    function GetPixelCount: Word; inline;
+    function GetTrasperentColor: Byte; inline;
     
     function GetImg2: ImageData;
     // function GetImg: ByteData;
@@ -27,6 +29,9 @@ type
     procedure Draw2(x, y: Word);
 
     procedure Debug;
+
+  private
+    procedure Decode;
 
   end;
 
@@ -101,7 +106,50 @@ implementation
           ReadFile(fileHandle, @data[0], image_data_size);
           
           CloseFile(fileHandle);
+
+          Decode;
         end;
+
+    // unpack RLE data into pixels, once - Draw2 only copies them
+    procedure ArchiveGraphicFile.Decode;
+      var
+        _l, _c, _nb : Byte;
+        _x, _n, _r, _i: Word;
+
+      begin
+        setLength(pixels, pixcount);
+        _nb := (1 shl color_bits) - 1;
+        _x := 0;
+
+        _n := 0;
+        while (_n < length(data)) do
+          begin
+            _l := ((data[_n] shr 7) and 1);
+
+            if (_l = 0) then
+              _r := (data[_n] shr color_bits) and ((1 shl (7 - color_bits)) - 1)
+            else
+              begin
+                if (_n + 1 >= length(data)) then break;
+                _r := ((data[_n] and $7F) shl (8 - color_bits)) or (data[_n + 1] shr color_bits);
+                inc(_n);
+              end;
+            
+            _c := palette[data[_n] and _nb];
+
+            _i := 1;
+            while (_i <= _r) do
+              begin
+                if (_x < pixcount) then
+                  pixels[_x] := _c;
+
+                inc(_x);
+                inc(_i);
+              end;
+
+            inc(_n);
+          end;
+      end;
 
     function ArchiveGraphicFile.GetYM: Word;
       begin
@@ -252,30 +300,19 @@ implementation
 
     procedure ArchiveGraphicFile.Draw2(x, y: Word);
       var 
-        _xi, _yi, _ycalc, _p : Word;
-        _img : ImageData;
+        _rows, _rest : Word;
       
       begin
-        _img := GetImg2;
+        if (xm = 0) or (length(pixels) = 0) then exit;
 
-        // GetImg2 fills columns 0..xm-1 and pixcount pixels only,
-        // the last column / row of the array are padding
-        _p := 0;
-        for _yi := 0 to ym do
-          begin
-            _ycalc := LineOffset[y + _yi];
-            
-            for _xi := 0 to xm - 1 do
-              begin
-                if _p >= pixcount then exit;
+        _rows := pixcount div xm;
+        _rest := pixcount mod xm;   // last row may be incomplete
 
-                if _img[_xi, _yi] <> bg_color then
-                  PutPixelOffset(_ycalc + x + _xi, _img[_xi, _yi]);
+        if _rows > 0 then
+          BlitTransparent(@pixels[0], LineOffset[y] + x, xm, _rows, xm, bg_color);
 
-                inc(_p);
-              end;
-          end;
-
+        if _rest > 0 then
+          BlitTransparent(@pixels[_rows * xm], LineOffset[y + _rows] + x, _rest, 1, xm, bg_color);
       end;
 
 

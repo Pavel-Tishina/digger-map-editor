@@ -32,7 +32,7 @@ uses
     // stored names.
     function FindFiles(Path: PChar; List: Pointer; MaxCount: Word): Word; // TODO: Delete it?
 
-    function FindFiles2(Path: ShortString): ListOfFileNames;
+    function FindFiles2(const Path: ShortString): ListOfFileNames;
 
     // Returns the total number of .DLF files in directory Path.
     function CountLVLFiles(Path: PChar): Word;
@@ -102,7 +102,7 @@ implementation
 
     ////////////////////////////////////////////
 
-    function FindFiles2(Path: ShortString): ListOfFileNames;
+    function FindFiles2(const Path: ShortString): ListOfFileNames;
       var
         _n, _i : Word;
         _arr : ListOfFileNames;

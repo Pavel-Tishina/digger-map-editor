@@ -1,4 +1,6 @@
 {$MODE OBJFPC}
+{$INLINE ON}
+{$PACKENUM 1}   // enums in 1 byte, not 4: Level is 152 bytes instead of 602
 unit _types;
 
 interface
@@ -7,7 +9,8 @@ uses
   _util;
 
 type
-  ListOfFileNames = array of ShortString;
+  TFileName12 = String[12];     // DOS 8.3 name, 13 bytes instead of 256
+  ListOfFileNames = array of TFileName12;
 
 type
   ImageData = array of array of Byte;
@@ -28,10 +31,9 @@ type
   TResultType = (rtBoolean, rtShortString, rtWord);
 
   TWindowResult = packed record
-    WType: ModalType;   // type of the window that produced the result
     case Kind: TResultType of
       rtBoolean:     (B: Boolean);
-      rtShortString: (S: ShortString);
+      rtShortString: (S: TFileName12);
       rtWord:        (W: Word);
     end;
 
@@ -45,11 +47,13 @@ type
 TGUI = class
   _x, _y, _xm, _ym: Word;
 
-  function IsClick(x, y: Word): Boolean; virtual;
-  function ObjX  : Word; virtual;
-  function ObjY  : Word; virtual;
-  function ObjXM : Word; virtual;
-  function ObjYM : Word; virtual;      
+  // not virtual: no descendant overrides them.
+  // IsClick is not inline - it is called in many places, +1.9K of code
+  function IsClick(x, y: Word): Boolean;
+  function ObjX  : Word; inline;
+  function ObjY  : Word; inline;
+  function ObjXM : Word; inline;
+  function ObjYM : Word; inline;
 end;
   
 

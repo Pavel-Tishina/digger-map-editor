@@ -20,6 +20,14 @@ interface
 
     function GetPixelOffset(pixel_offset: Word): Byte; pascal; external name 'DRAW_GETPIXELOFFSET';
 
+    // w x h sprite from src (rows are stride bytes apart) to the screen offset,
+    // pixels equal to key are not drawn
+    procedure BlitTransparent(src: Pointer; dst_ofs, w, h, stride: Word; key: Byte); pascal; external name 'DRAW_BLITTRANSPARENT';
+
+    // w x h screen area <-> buffer of w * h bytes
+    procedure SaveRect(ofs, w, h: Word; buf: Pointer); pascal; external name 'DRAW_SAVERECT';
+    procedure RestoreRect(buf: Pointer; ofs, w, h: Word); pascal; external name 'DRAW_RESTORERECT';
+
 implementation
 
 {$L asm/draw.obj}
@@ -50,33 +58,8 @@ implementation
     ////////////////////////////////////////////
 
     procedure Square(x, y, s: Word; c: Byte);
-        var
-            n, yy1, yy2, i : Word;
-
         begin
-            n := s div 2;
-
-            for i:= 0 to n do
-            begin
-                yy1 := LineOffset[y + i];
-                yy2 := LineOffset[y + s - i];
-
-                PutPixelOffset(LineOffset[y] + x + i, c);
-                PutPixelOffset(LineOffset[y] + x + s - i, c);
-
-                if i > 0 then
-                begin
-
-                    PutPixelOffset(yy1 + x, c);
-                    PutPixelOffset(yy1 + x + s, c);
-
-                    PutPixelOffset(yy2 + x, c);
-                    PutPixelOffset(yy2 + x + s, c);
-                end;
-
-                PutPixelOffset(LineOffset[y + s] + x + i, c);
-                PutPixelOffset(LineOffset[y + s] + x + s - i, c);
-            end;
+            Rectangle(x, y, x + s, y + s, c);
         end;
 
     ////////////////////////////////////////////

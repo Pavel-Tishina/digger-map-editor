@@ -10,7 +10,7 @@ uses
 type
   IconButton = class(TGUI)
     const
-      _s : Byte = 19;
+      _s = 19;
 
     var
       _t : IconButtonType;
@@ -43,20 +43,11 @@ implementation
   // // // // // // // //
 
   procedure IconButton.Draw;
-    var _fx, _fy, _i: Word;
-
     begin
       if (_t <> IconButtonType.Cross) then
         begin
           setLength(_background, (_s + 1) * (_s + 1));
-          
-          _i := 0;
-          for _fy := _y to _ym do
-            for _fx := _x to _xm do
-              begin
-                _background[_i] := GetPixelOffset(LineOffset[_fy] + _fx);
-                inc(_i);
-              end;
+          SaveRect(LineOffset[_y] + _x, _s + 1, _s + 1, @_background[0]);
 
           FilledSquare(_x, _y, _s, 7, 0);          
           _img.Draw2(_x + 1, _y + 1); // TODO !!!! Hallo! Ich habe an dieser Zeile aufgehört.
@@ -72,31 +63,10 @@ implementation
     end;
 
   procedure IconButton.Hide;
-    var _fx, _fy, _ycalc, _i: Word;
-    
     begin
-      if (_t = IconButtonType.Cross) then exit;
-      
-      _i := 0;
-      _fy := _y;
-      _fx := _x;
-      _ycalc := LineOffset[_y];
-      while (_i < length(_background)) do
-        begin
-          PutPixelOffset(_ycalc + _fx, _background[_i]);
-              
-          if (_fx >= _xm) then
-            begin
-              _fx := _x;
-              inc(_fy);
-              _ycalc := LineOffset[_fy];
-            end
-          else
-            inc(_fx);
+      if (_t = IconButtonType.Cross) OR (length(_background) = 0) then exit;
 
-          inc(_i);
-        end;
-          
+      RestoreRect(@_background[0], LineOffset[_y] + _x, _s + 1, _s + 1);
       setLength(_background, 0);
     end;
 

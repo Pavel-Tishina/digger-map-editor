@@ -13,21 +13,21 @@ const
 type
   TFileLine = class(TGUI)
     const
-      _inside_marging   : Byte = 2;
-      _x_line           : Byte = 99;
-      _h_line           : Byte = 5;
-      _v_line           : Byte = 12;
-      _name_ext         : ShortString = '.DLF';
+      _inside_marging   = 2;
+      _x_line           = 99;
+      _h_line           = 5;
+      _v_line           = 12;
+      _name_ext         = '.DLF';
 
       var
-        _file_name : ShortString;
+        _file_name : TFileName12;
 
-    constructor Create(x, y: Word; file_name: ShortString);
+    constructor Create(x, y: Word; const file_name: ShortString);
     procedure Draw;
     procedure Draw(edit: Boolean);
     procedure Hide;
     procedure Select(isSelect: Boolean);
-    procedure SetName(f_name: ShortString);
+    procedure SetName(const f_name: ShortString);
     procedure EditName;
     function GetName: ShortString;
 
@@ -42,7 +42,7 @@ implementation
 
   // // // TFileLine // // //
 
-  constructor TFileLine.Create(x, y: Word; file_name: ShortString);
+  constructor TFileLine.Create(x, y: Word; const file_name: ShortString);
     begin
       _x := x;
       _y := y;
@@ -60,7 +60,7 @@ implementation
 
   // // // // // // // // //
 
-  procedure TFileLine.SetName(f_name: ShortString);
+  procedure TFileLine.SetName(const f_name: ShortString);
     begin
       _file_name := f_name;
     end;
@@ -76,8 +76,7 @@ implementation
 
   procedure TFileLine.Draw(edit: Boolean);
     var
-      _fx, _fy, _coord: Word;
-      _c : Byte;
+      _fy, _o, _oe: Word;
 
     begin
       Rectangle(_x, _y, _x + _h_line, _ym, 7);
@@ -86,20 +85,22 @@ implementation
       Rectangle(_xm - _h_line, _y, _xm, _ym, 7);
       Line(_xm - _h_line, _y + 1, _xm - _h_line, _ym - 1, 8);
 
-      if edit then
-        begin
-          for _fy := _y + 1 to _ym - 1 do
-            for _fx := _x + 1 to _xm - 1 do
-              begin 
-                _coord := LineOffset[_fy] + _fx;
-                _c := specialize IfElse<Byte>((_coord mod 6 = 0), 0, 8);
+      FilledRectangle(_x + 1, _y + 1, _xm - 1, _ym - 1, 8, 8);
 
-                PutPixelOffset(_coord, _c);
+      // edit mode: black dot on every screen offset divisible by 6,
+      // one division per line instead of one per pixel
+      if edit then
+        for _fy := _y + 1 to _ym - 1 do
+          begin
+            _o  := LineOffset[_fy] + _x + 1;
+            _oe := LineOffset[_fy] + _xm - 1;
+            inc(_o, (6 - _o mod 6) mod 6);
+            while _o <= _oe do
+              begin
+                PutPixelOffset(_o, 0);
+                inc(_o, 6);
               end;
-        end
-      else
-        FilledRectangle(_x + 1, _y + 1, _xm - 1, _ym - 1, 8, 8);
-        // FilledRectangle(_x, _y, _xm, _ym, 8, 8);
+          end;
 
       DrawString(_x + _inside_marging, _y + _inside_marging, _file_name);
     end;

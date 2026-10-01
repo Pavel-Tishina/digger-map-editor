@@ -14,7 +14,7 @@ type
 type
   LevelGrid = class(TGUI)
     const
-      _grid_size: Byte = 17;
+      _grid_size= 17;
 
     var
       _xn, _yn: Byte; 
@@ -23,6 +23,7 @@ type
 
     constructor Init(xpos, ypos: Word; xc, yc: Byte);
 
+    procedure Clear;
     procedure Draw;
     procedure DrawCell(x, y: Byte);
 
@@ -73,6 +74,19 @@ implementation
 
     /// /// /// /// /// ///
 
+  // all cells -> Field, without redraw
+  procedure LevelGrid.Clear;
+    var
+      X, Y: Byte;
+
+    begin
+      for Y :=0 to _yn do
+        for X :=0 to _xn do
+          _cells[X, Y].SetType(CellType.Field);
+    end;
+
+    /// /// /// /// /// ///
+
   procedure LevelGrid.Draw;
     var
       X, Y: Byte;
@@ -103,7 +117,11 @@ implementation
 
   function LevelGrid.GetTypeCell(x, y: Byte): CellType;
     begin
-      Result := specialize IfElse<CellType>(btwn(x, 0, _xn) AND btwn(y, 0, _yn), _cells[x, y].GetType, CellType.Error);
+      // not IfElse: it would call _cells[x, y].GetType before the bounds check
+      if btwn(x, 0, _xn) AND btwn(y, 0, _yn) then
+        Result := _cells[x, y].GetType
+      else
+        Result := CellType.Error;
     end;
 
     /// /// /// /// /// ///
@@ -164,15 +182,21 @@ implementation
     procedure LevelGrid.SetMap(lvl : Level);
     var
       x, y: Byte;
+      t: CellType;
 
     begin
+      if lvl = nil then exit;
+
       for y := 0 to 9 do
         for x := 0 to 14 do
-          if _cells[x, y].GetType <> lvl.GetType(x, y) then
-            begin
-              _cells[x, y].SetType(lvl.GetType(x, y));
-              _cells[x, y].Draw;
-            end;
+          begin
+            t := lvl.GetType(x, y);
+            if _cells[x, y].GetType <> t then
+              begin
+                _cells[x, y].SetType(t);
+                _cells[x, y].Draw;
+              end;
+          end;
     end;
 
 end.

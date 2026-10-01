@@ -18,6 +18,9 @@ global DRAW_DELAYUS
 global DRAW_FILLSPAN
 global DRAW_VSPAN
 global DRAW_LINE
+global DRAW_BLITTRANSPARENT
+global DRAW_SAVERECT
+global DRAW_RESTORERECT
 
 ; procedure PutPixelOffset(pos: Word; color: Byte);
 ;   [bp+6] = pos
@@ -154,19 +157,163 @@ DRAW_VSPAN:
         pop bp
         ret 6
 
+; procedure BlitTransparent(src: Pointer; dst_ofs, w, h, stride: Word; key: Byte);
+;   copies a w x h sprite from DS:src (rows are stride bytes apart)
+;   to the screen at dst_ofs, pixels equal to key are skipped
+;   [bp+14] = src
+;   [bp+12] = dst_ofs
+;   [bp+10] = w
+;   [bp+8]  = h
+;   [bp+6]  = stride
+;   [bp+4]  = key
+DRAW_BLITTRANSPARENT:
+        push bp
+        mov bp, sp
+        push es
+        push si
+        push di
+
+        mov ax, VIDEO_SEG
+        mov es, ax
+
+        mov si, [bp+14]
+        mov di, [bp+12]
+        mov dx, [bp+8]          ; DX = rows left
+        mov ah, [bp+4]          ; AH = transparent color
+        cmp word [bp+10], 0
+        je .done
+        cld
+
+.row:
+        test dx, dx
+        jz .done
+        mov bx, si
+        add bx, [bp+6]          ; BX = next source row
+        mov cx, [bp+10]
+.pixel:
+        lodsb
+        cmp al, ah
+        je .skip
+        stosb
+        loop .pixel
+        jmp .row_end
+.skip:
+        inc di
+        loop .pixel
+.row_end:
+        mov si, bx
+        add di, 320
+        sub di, [bp+10]         ; next screen row
+        dec dx
+        jmp .row
+
+.done:
+        pop di
+        pop si
+        pop es
+        pop bp
+        ret 12
+
+; procedure SaveRect(ofs, w, h: Word; buf: Pointer);
+;   copies a w x h screen area at ofs into DS:buf (w * h bytes)
+;   [bp+10] = ofs
+;   [bp+8]  = w
+;   [bp+6]  = h
+;   [bp+4]  = buf
+DRAW_SAVERECT:
+        push bp
+        mov bp, sp
+        push ds
+        push es
+        push si
+        push di
+
+        mov ax, ds
+        mov es, ax              ; ES:DI -> buffer
+        mov di, [bp+4]
+        mov si, [bp+10]
+        mov bx, [bp+8]          ; BX = w
+        mov dx, [bp+6]          ; DX = h
+        mov ax, VIDEO_SEG
+        mov ds, ax              ; DS:SI -> screen, params are SS:BP based
+        cld
+
+.row:
+        test dx, dx
+        jz .done
+        mov cx, bx
+        shr cx, 1               ; words, CF = odd byte
+        rep movsw
+        adc cx, cx
+        rep movsb
+        add si, 320
+        sub si, bx
+        dec dx
+        jmp .row
+
+.done:
+        pop di
+        pop si
+        pop es
+        pop ds
+        pop bp
+        ret 8
+
+; procedure RestoreRect(buf: Pointer; ofs, w, h: Word);
+;   copies w * h bytes from DS:buf to a w x h screen area at ofs
+;   [bp+10] = buf
+;   [bp+8]  = ofs
+;   [bp+6]  = w
+;   [bp+4]  = h
+DRAW_RESTORERECT:
+        push bp
+        mov bp, sp
+        push es
+        push si
+        push di
+
+        mov ax, VIDEO_SEG
+        mov es, ax              ; ES:DI -> screen
+        mov si, [bp+10]
+        mov di, [bp+8]
+        mov bx, [bp+6]          ; BX = w
+        mov dx, [bp+4]          ; DX = h
+        cld
+
+.row:
+        test dx, dx
+        jz .done
+        mov cx, bx
+        shr cx, 1               ; words, CF = odd byte
+        rep movsw
+        adc cx, cx
+        rep movsb
+        add di, 320
+        sub di, bx
+        dec dx
+        jmp .row
+
+.done:
+        pop di
+        pop si
+        pop es
+        pop bp
+        ret 8
+
 ; procedure Line(X1, Y1, X2, Y2: Integer; Color: Byte);
 ;   Bresenham, all octants
+;   horizontal and vertical lines use fast paths
 ;   [bp+12] = X1
 ;   [bp+10] = Y1
 ;   [bp+8]  = X2
 ;   [bp+6]  = Y2
 ;   [bp+4]  = Color
 ;
-;   locals          registers
-;   [bp-2] = DX     SI = X
-;   [bp-4] = DY     DI = Y
-;   [bp-6] = SX     DX = Err
-;   [bp-8] = SY     AX = E2
+;   locals                  registers
+;   [bp-2] = DX             DI = screen offset of (X, Y)
+;   [bp-4] = DY             DX = Err
+;   [bp-6] = SX (+-1)       CX = pixels left
+;   [bp-8] = SY (+-320)     BX = E2, AL = Color
 %define L_DX  word [bp-2]
 %define L_DY  word [bp-4]
 %define L_SX  word [bp-6]
@@ -182,13 +329,21 @@ DRAW_LINE:
 
         mov ax, VIDEO_SEG
         mov es, ax
+        cld
 
-        mov si, [bp+12]         ; X = X1
-        mov di, [bp+10]         ; Y = Y1
+        ; DI = Y1 * 320 + X1 = (Y1 shl 8) + (Y1 shl 6) + X1
+        mov di, [bp+10]
+        mov cl, 6
+        shl di, cl
+        mov ax, di
+        shl ax, 1
+        shl ax, 1
+        add di, ax
+        add di, [bp+12]
 
         ; DX = abs(X2 - X1), SX = direction X
         mov ax, [bp+8]
-        sub ax, si
+        sub ax, [bp+12]
         mov cx, 1
         test ax, ax
         jge .dx_positive
@@ -198,10 +353,10 @@ DRAW_LINE:
         mov L_DX, ax
         mov L_SX, cx
 
-        ; DY = -abs(Y2 - Y1), SY = direction Y
+        ; DY = -abs(Y2 - Y1), SY = direction Y (one screen row)
         mov ax, [bp+6]
-        sub ax, di
-        mov cx, 1
+        sub ax, [bp+10]
+        mov cx, 320
         test ax, ax
         jl .dy_negative         ; already -abs(...)
         neg ax
@@ -212,42 +367,68 @@ DRAW_LINE:
         mov L_DY, ax
         mov L_SY, cx
 
+        test ax, ax
+        jnz .not_horizontal
+
+        ; horizontal (or a single point): DX + 1 pixels from the leftmost end
+        mov cx, L_DX
+        cmp L_SX, 0
+        jg .h_fill
+        sub di, cx
+.h_fill:
+        inc cx
+        mov al, [bp+4]
+        rep stosb
+        jmp .done
+
+.not_horizontal:
+        cmp L_DX, 0
+        jne .general
+
+        ; vertical: -DY + 1 pixels
+        mov cx, ax
+        neg cx
+        inc cx
+        mov bx, L_SY
+        mov al, [bp+4]
+.v_next:
+        mov [es:di], al
+        add di, bx
+        loop .v_next
+        jmp .done
+
+.general:
+        ; pixels = max(DX, -DY) + 1
+        mov cx, ax
+        neg cx
+        cmp cx, L_DX
+        jge .count_ok
+        mov cx, L_DX
+.count_ok:
+        inc cx
+
         ; Err = DX + DY
         mov dx, L_DX
         add dx, ax
 
-.loop:
-        ; PutPixel(X, Y): offset = Y * 320 + X = (Y shl 8) + (Y shl 6) + X
-        mov bx, di
-        mov cl, 6
-        shl bx, cl
-        mov ax, bx
-        shl ax, 1
-        shl ax, 1
-        add bx, ax
-        add bx, si
         mov al, [bp+4]
-        mov [es:bx], al
+.loop:
+        mov [es:di], al
+        dec cx
+        jz .done
 
-        ; if X = X2 and Y = Y2 -> end
-        cmp si, [bp+8]
-        jne .continue
-        cmp di, [bp+6]
-        je .done
-
-.continue:
         ; E2 = 2 * Err
-        mov ax, dx
-        add ax, ax
+        mov bx, dx
+        add bx, bx
 
         ; if E2 >= DY then Err += DY; X += SX
-        cmp ax, L_DY
+        cmp bx, L_DY
         jl .skip_x
         add dx, L_DY
-        add si, L_SX
+        add di, L_SX
 .skip_x:
         ; if E2 <= DX then Err += DX; Y += SY
-        cmp ax, L_DX
+        cmp bx, L_DX
         jg .skip_y
         add dx, L_DX
         add di, L_SY

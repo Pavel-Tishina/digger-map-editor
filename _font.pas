@@ -7,15 +7,15 @@ interface
 uses
   _ag, _types, draw;
 
-  procedure DrawString(x, y : Word; s : String);
+  procedure DrawString(x, y : Word; const s : String);
 
 implementation
 
   const
     _s  : String[66] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?~-+''"\/()[]{}.,:;=_<>#&%^*|@';
     _r  = 8;             // letter size (8x8)
-    _xn : Byte = 21;
-    _yn : Byte = 2;
+    _xn = 21;
+    _yn = 2;
 
   type
     TGlyph = array[0.._r - 1, 0.._r - 1] of Byte;   // [y, x]
@@ -40,26 +40,17 @@ implementation
 
   procedure DrawLetter(x, y: Word; c: Char);
     var
-      _n, _x, _y, _p : Byte;
-      _yc : Word;
+      _n : Byte;
 
     begin
       _n := _index[c];
       if _n = 0 then exit;
 
-      for _y := 0 to _r - 1 do
-        begin
-          _yc := LineOffset[y + _y] + x;
-          for _x := 0 to _r - 1 do
-            begin
-              _p := _symbols[_n, _y, _x];
-              if _p <> _cf then
-                PutPixelOffset(_yc + _x, _p);
-            end;
-        end;
+      // TGlyph is [y, x]: 8 rows of 8 bytes
+      BlitTransparent(@_symbols[_n], LineOffset[y] + x, _r, _r, _r, _cf);
     end;
 
-  procedure DrawString(x, y : Word; s : String);
+  procedure DrawString(x, y : Word; const s : String);
     var
       _i : Word;
 

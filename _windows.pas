@@ -10,19 +10,19 @@ uses
 type
   TModal = class(TGUI)
     const
-      _title_tm : Byte = 5;   // title top marging
-      _title_lm : Byte = 5;   // title left-right marging
-      _txt_tm   : Byte = 20;  // text top marging
-      _txt_lm   : Byte = 5;   // text l-r marging
-      _txt_btwm : Byte = 10;  // text between lines marging
-      _txt_bm   : Byte = 5;   // Text bottom marging (to buttons)
-      _btns_btwm: Byte = 12;
-      _btns_bm  : Byte = 5;
+      _title_tm = 5;   // title top marging
+      _title_lm = 5;   // title left-right marging
+      _txt_tm   = 20;  // text top marging
+      _txt_lm   = 5;   // text l-r marging
+      _txt_btwm = 10;  // text between lines marging
+      _txt_bm   = 5;   // Text bottom marging (to buttons)
+      _btns_btwm= 12;
+      _btns_bm  = 5;
 
-      _file_marging : Byte = 5;
-      _file_btn_m   : Byte = 24;
-      _file_list_xm : Byte = 165;
-      _file_list_ym : Byte = 165;
+      _file_marging = 5;
+      _file_btn_m   = 24;
+      _file_list_xm = 165;
+      _file_list_ym = 165;
 
     var
       _buttons: array of TModalButton;
@@ -36,15 +36,15 @@ type
       _close_after : Boolean;
 
     constructor Create(
-      title: String; 
-      text: array of String; 
+      const title: String; 
+      const text: array of String; 
       x1, y1, x2, y2: Word; 
       wtype: ModalType
     );
 
     constructor Create(
-      title: String; 
-      text: array of String; 
+      const title: String; 
+      const text: array of String; 
       x1, y1: Word; 
       wtype: ModalType
     );
@@ -77,7 +77,7 @@ implementation
         _OKAY   : ShortString = 'OKAY';
         _YES    : ShortString = 'YES';
         _NO     : ShortString = 'NO';
-        _btn_x  : Byte = 38;
+        _btn_x  = 38;
 
       var
         _xx, _yy : Word;
@@ -130,8 +130,8 @@ implementation
     // // // // // // // // // // //
 
     constructor TModal.Create(
-      title: String; 
-      text: array of String; 
+      const title: String; 
+      const text: array of String; 
       x1, y1: Word; 
       wtype: ModalType
     );
@@ -142,8 +142,8 @@ implementation
     // // // // // // // // // // //
 
     constructor TModal.Create(
-      title: String; 
-      text: array of String; 
+      const title: String; 
+      const text: array of String; 
       x1, y1, x2, y2: Word; 
       wtype: ModalType
     );
@@ -321,8 +321,6 @@ implementation
         _btn : Byte;
 
       begin
-        _r.WType := _wtype;
-
         if NOT IsShown then
           begin
             _r.Kind := rtBoolean;
@@ -373,7 +371,6 @@ implementation
         SetGray;
 
         FillChar(_r, SizeOf(_r), 0);
-        _r.WType := GetType;
 
         MyMouse.X := x;
         MyMouse.Y := y;

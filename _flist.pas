@@ -12,12 +12,12 @@ type
 
 TFileListObj = class(TGUI)
     const
-      _files_frame : Byte = 10;   // files in frame 
-      _elem_btw    : Byte = 16;   // from Y to Y diff elements
-      _scroll_xm   : Byte = 105;  // margin scroll from left
+      _files_frame = 10;   // files in frame 
+      _elem_btw    = 16;   // from Y to Y diff elements
+      _scroll_xm   = 105;  // margin scroll from left
     
     var
-      _files : array of ShortString;
+      _files : ListOfFileNames;
       _f_lines : TFileArray;
       _scroll : TFileScroll;
       _s : ShortInt;  // position line
@@ -44,7 +44,9 @@ implementation
       __n, __y : Word;
       __l : Byte;
     begin
-      __n := CountLVLFiles('\MAPS\'#0);
+      // one call: FindFiles2 counts and lists the files itself
+      _files := FindFiles2('\MAPS\');
+      __n := length(_files);
 
       if __n = 0 then
         begin
@@ -54,8 +56,6 @@ implementation
 
       _x := x;
       _y := y;
-
-      _files := FindFiles2('\MAPS\');
 
       _s := 0;
       if __n > _files_frame then

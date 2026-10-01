@@ -11,8 +11,8 @@ type
   TModalButton = class(TGUI)
     _txt: ShortString;
 
-    constructor Create(x, y: Word; txt: ShortString);
-    constructor Create(x, y: Word; minx: Byte; txt: ShortString);
+    constructor Create(x, y: Word; const txt: ShortString);
+    constructor Create(x, y: Word; minx: Byte; const txt: ShortString);
     procedure Draw;
 
   end;
@@ -20,12 +20,12 @@ type
 
 implementation
 
-    constructor TModalButton.Create(x, y: Word; txt: ShortString);
+    constructor TModalButton.Create(x, y: Word; const txt: ShortString);
       begin
         Create(x, y, 0, txt);
       end;
 
-    constructor TModalButton.Create(x, y: Word; minx: Byte; txt: ShortString);
+    constructor TModalButton.Create(x, y: Word; minx: Byte; const txt: ShortString);
       begin
         _x := x;
         _y := y;
