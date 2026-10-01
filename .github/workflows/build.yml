@@ -59,7 +59,14 @@ jobs:
         shell: pwsh
         run: |
           $zip = "digger-map-editor-$env:GITHUB_REF_NAME.zip" -replace '[\\/]', '-'
-          Compress-Archive -Path run_dme.exe, README.MD -DestinationPath $zip
+          # the program loads \DRAFT\*.CG2 and keeps maps in \MAPS\
+          New-Item -ItemType Directory dist, dist\DRAFT, dist\MAPS | Out-Null
+          Copy-Item run_dme.exe, README.MD dist
+          Copy-Item draft\*.cg2 dist\DRAFT
+          # 7z keeps the empty MAPS directory, Compress-Archive drops it
+          7z a $zip .\dist\*
+          if ($LASTEXITCODE -ne 0) { throw "7z failed" }
+          7z l $zip
           "zip=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - uses: actions/upload-artifact@v4

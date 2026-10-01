@@ -47,6 +47,16 @@ build.cmd my_program.pas
 
 `run_dme.exe` is a 16-bit DOS program, run it in DOSBox or a real/virtual DOS machine.
 
+The editor loads its graphics from `\DRAFT\*.CG2` and keeps maps in `\MAPS\`, these paths are taken
+from the root of the current drive. Unpack the release archive into a directory and mount it as a drive root,
+e.g. in DOSBox:
+
+```
+mount c d:\dme
+c:
+run_dme
+```
+
 ## Releases
 
 Ready-to-use builds are on the [Releases](https://github.com/Pavel-Tishina/digger-map-editor/releases) page.
