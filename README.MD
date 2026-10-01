@@ -46,3 +46,16 @@ build.cmd my_program.pas
 ### Running
 
 `run_dme.exe` is a 16-bit DOS program, run it in DOSBox or a real/virtual DOS machine.
+
+## Releases
+
+Ready-to-use builds are on the [Releases](https://github.com/Pavel-Tishina/digger-map-editor/releases) page.
+
+The project is built by GitHub Actions (`.github/workflows/build.yml`) on every push to `main` and on pull requests;
+the archive with `run_dme.exe` is attached to the workflow run as an artifact.
+To publish a new release, push a version tag:
+
+```cmd
+git tag v1.0.1
+git push origin v1.0.1
+```

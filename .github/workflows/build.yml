@@ -1,0 +1,75 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FPC_VER: 3.2.2
+  FPC_DIR: C:\FPC\3.2.2
+  FPC_URL: https://downloads.sourceforge.net/project/freepascal/Win32/3.2.2
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Free Pascal
+        id: fpc-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.FPC_DIR }}
+          key: fpc-${{ env.FPC_VER }}-i8086-msdos
+
+      - name: Install Free Pascal + i8086-msdos cross compiler
+        if: steps.fpc-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $flags = '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=$env:FPC_DIR"
+          foreach ($name in "fpc-$env:FPC_VER.i386-win32.exe", "fpc-$env:FPC_VER.i386-win32.cross.i8086-msdos.exe") {
+            Write-Host "Downloading $name"
+            curl.exe -fL --retry 3 -o $name "$env:FPC_URL/$name"
+            if ($LASTEXITCODE -ne 0) { throw "download of $name failed" }
+            Start-Process -FilePath ".\$name" -ArgumentList $flags -Wait
+            Remove-Item $name
+          }
+          Get-ChildItem "$env:FPC_DIR\bin\i386-win32" -Name
+
+      - name: Install NASM if it is not shipped with FPC
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "$env:FPC_DIR\bin\i386-win32\nasm.exe")) {
+            choco install nasm -y --no-progress
+            "NASM=C:\Program Files\NASM\nasm.exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          }
+
+      - name: Build
+        shell: cmd
+        run: build.cmd
+
+      - name: Package
+        id: pkg
+        shell: pwsh
+        run: |
+          $zip = "digger-map-editor-$env:GITHUB_REF_NAME.zip" -replace '[\\/]', '-'
+          Compress-Archive -Path run_dme.exe, README.MD -DestinationPath $zip
+          "zip=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digger-map-editor
+          path: ${{ steps.pkg.outputs.zip }}
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.pkg.outputs.zip }}
+          generate_release_notes: true
