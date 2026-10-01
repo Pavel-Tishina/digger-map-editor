@@ -1,7 +1,8 @@
-﻿init
-# digger-map-editor
+﻿# digger-map-editor
 
-Map Editor for Digger Remastered (re-creation of old game Digger by Windmill Software).
+Map Editor for <a href="https://digger.org/download.html">Digger Remastered</a> (re-creation of old game Digger by Windmill Software).
+
+<img src="draft/Main_Window.png" alt="Main Window" width="320" height="200">
 
 ## Build
 
