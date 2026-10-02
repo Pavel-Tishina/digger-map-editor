@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
 unit _windows;
@@ -5,7 +6,7 @@ unit _windows;
 interface
 
 uses
-  _ag, _types, _font, _util, draw, _ibtn, _mbtn, io, _flist, _back, design, _mouse;
+  _types, _font, _util, draw, _ibtn, _mbtn, _flist, _back, design, _mouse;
 
 type
   TModal = class(TGUI)
@@ -15,8 +16,6 @@ type
       _txt_tm   = 20;  // text top marging
       _txt_lm   = 5;   // text l-r marging
       _txt_btwm = 10;  // text between lines marging
-      _txt_bm   = 5;   // Text bottom marging (to buttons)
-      _btns_btwm= 12;
       _btns_bm  = 5;
 
       _file_marging = 5;
@@ -31,25 +30,14 @@ type
       _wtype: ModalType;
       _bkg_area: TBackGround;
 
-      _title: String;
-      _text: array of String;
+      _title: String[40];             // not String: 256 bytes each
+      _text: array of String[40];
       _close_after : Boolean;
 
+    // the size is calculated from the title and text (FileWindow: fixed size)
     constructor Create(
       const title: String; 
       const text: array of String; 
-      x1, y1, x2, y2: Word; 
-      wtype: ModalType
-    );
-
-    constructor Create(
-      const title: String; 
-      const text: array of String; 
-      x1, y1: Word; 
-      wtype: ModalType
-    );
-
-    constructor Create(
       x1, y1: Word; 
       wtype: ModalType
     );
@@ -66,24 +54,21 @@ type
     function WindowAction(x, y: Word): TWindowResult;
     function WaitResult(x, y: Word): TWindowResult; // Click Me!!
 
-    function GetType: ModalType;
-
   end;
 
 implementation
 
     procedure TModal.InitElements(wtype: ModalType);
       const
-        _OKAY   : ShortString = 'OKAY';
-        _YES    : ShortString = 'YES';
-        _NO     : ShortString = 'NO';
+        _YES    = 'YES';
+        _NO     = 'NO';
         _btn_x  = 38;
 
       var
         _xx, _yy : Word;
 
       begin
-        _xx := (_xm - _x) div 4;
+        _xx := Word(_xm - _x) div 4;
         _yy := _ym - 14 - _btns_bm;
 
         case wtype of
@@ -102,16 +87,6 @@ implementation
 
               _buttons[0] := TModalButton.Create(_x + _xx - (_btn_x div 2), _yy, _btn_x, _YES);
               _buttons[1] := TModalButton.Create(_xm - _xx - (_btn_x div 2), _yy, _btn_x, _NO);
-              
-              if _xm < _xx then
-                _xm := _xx;
-
-            end;
-
-          ModalType.SimpleWindow:
-            begin
-              setLength(_buttons, 1);
-              _buttons[0] := TModalButton.Create(_x + ((_xm - _x) div 2) - (_btn_x div 2), _yy, _btn_x, _OKAY);
             end;
 
         end;
@@ -120,81 +95,44 @@ implementation
     // // // // // // // // // // //
 
     constructor TModal.Create(
-      x1, y1: Word; 
-      wtype: ModalType
-    );
-      begin
-        Create('', [''], x1, y1, 0, 0, wtype);
-      end;
-
-    // // // // // // // // // // //
-
-    constructor TModal.Create(
       const title: String; 
       const text: array of String; 
       x1, y1: Word; 
-      wtype: ModalType
-    );
-      begin
-        Create(title, text, x1, y1, 0, 0, wtype);
-      end;
-
-    // // // // // // // // // // //
-
-    constructor TModal.Create(
-      const title: String; 
-      const text: array of String; 
-      x1, y1, x2, y2: Word; 
       wtype: ModalType
     );
       var
-        _max_xl, _max_yl, _n : Word;
-        _i : Word;
+        _n : Word;
+        _i : Integer;   // signed: high(text) = -1 for an empty text
 
       begin
         _close_after := false;
         _title := title;
         setLength(_text, length(text));
-        for _i := 0 to length(text) - 1 do
+        for _i := 0 to high(text) do
           _text[_i] := text[_i];
         _wtype := wtype;
 
         _x := x1; 
         _y := y1;
 
-        _max_xl := specialize IfElse<Word>(
-          wtype <> ModalType.FileWindow,
-          x1 + length(title) * 8 + (_title_lm * 2),
-          x1 + _file_list_xm
-        );
-
-        for _i := 0 to length(text) - 1 do
-          begin
-            _n := x1 + (length(text[_i]) * 8) + (_title_lm * 2);
-            if _n > _max_xl then
-              _max_xl := _n;
-          end;
-
-
         if wtype = ModalType.FileWindow then
           begin
             _xm := _x + _file_list_xm;
             _ym := _y + _file_list_ym;
           end
-        
-        else if (x2 = 0) AND (y2 = 0) then
-          begin
-            _xm := _max_xl;
-            _max_yl := y1 + _txt_tm + (length(text) * _txt_btwm) + _btns_bm + 14;
-            _ym := _max_yl;
-          end
         else
           begin
-            _xm := specialize IfElse<Word>(_max_xl > x2, _max_xl, x2);
-            _max_yl := y1 + _txt_tm + (length(text) * _txt_btwm) + _txt_bm + 10 + _btns_bm + 14;
-            _ym := specialize IfElse<Word>(_max_yl > y2, _max_yl, y2);
-          end;
+            // the widest of the title and the text lines
+            _xm := x1 + length(title) * 8 + (_title_lm * 2);
+            for _i := 0 to high(text) do
+              begin
+                _n := x1 + (length(text[_i]) * 8) + (_title_lm * 2);
+                if _n > _xm then
+                  _xm := _n;
+              end;
 
+            _ym := y1 + _txt_tm + (length(text) * _txt_btwm) + _btns_bm + 14;
+          end;
 
         InitElements(wtype);
       end;
@@ -277,7 +215,7 @@ implementation
 
         if _wtype <> ModalType.FileWindow then
           begin
-            _xi := (((_xm - _x) div 2) - ((length(_title) * 8) div 2));
+            _xi := Word(_xm - _x) div 2 - length(_title) * 4;
             _yi := _y + _title_tm;
             DrawString(_x + _xi, _yi, _title);
             Line(_x + _xi + 1, _yi + 9, _xm - _xi, _yi + 9, 6);
@@ -307,13 +245,6 @@ implementation
 
     // // // // // // // // // // //
 
-    function TModal.GetType: ModalType;
-      begin
-        Result := _wtype;
-      end;
-
-    // // // // // // // // // // //
-
     function TModal.WindowAction(x, y: Word): TWindowResult;
       var
         _r  : TWindowResult;
@@ -333,7 +264,10 @@ implementation
             begin
               _selected_name := WhatFileNameChoosed(x, y);
               _r.Kind := rtShortString;
-              _r.S := specialize IfElse<ShortString>(_close_after AND (length(_selected_name) > 0), _selected_name, '');
+              if _close_after then
+                _r.S := _selected_name
+              else
+                _r.S := '';
               if _close_after then
                 begin
                   Hide;
@@ -347,14 +281,6 @@ implementation
               _r.Kind := rtBoolean;
               _r.B := _btn = 0;
               if _btn <> 255 then
-                Hide;
-            end;
-
-          ModalType.SimpleWindow:
-            begin
-              _r.Kind := rtBoolean;
-              _r.B := False;
-              if WhatBtnClick(x, y) <> 255 then
                 Hide;
             end;
         end;
@@ -379,7 +305,7 @@ implementation
 
         MouseShow;
         repeat
-          MouseUpdate;
+          MouseRead(MyMouse);
           
           if LBtnRelease(MyMouse.Btn, _pre_lb) AND IsClick(MyMouse.X, MyMouse.Y) then
             begin

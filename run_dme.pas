@@ -1,18 +1,21 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 program main;
 
 uses
-  design, video, draw, _mouse, io, _grid, _map, _ibtn, _types, _ag, _util, _cell, _font, _fline, _windows;
+  design, video, draw, _mouse, io, _grid, _map, _ibtn, _types, _util, _cell, _fline, _windows;
 
 const
-  _file_w_x      : Byte = 82;
-  _file_w_y      : Byte = 20;
-  
-  _window_x      : Byte = 65;
-  _window_y      : Byte = 70;
-  
-  _not_sav_w_t   : ShortString = 'Map changes not saved!';
-  _not_sav_w_txt : array [1..2] of ShortString = ('Would you like to save it',  'before the exit?');
+  // untyped constants: a typed ShortString constant takes 256 bytes in the exe
+  _file_w_x      = 82;
+  _file_w_y      = 20;
+
+  _window_x      = 65;
+  _window_y      = 70;
+
+  _not_sav_w_t   = 'Map changes not saved!';
+  _not_sav_w_txt1 = 'Would you like to save it';
+  _not_sav_w_txt2 = 'before the exit?';
 
 var
   prev_mouse_lb, prev_mouse_rb, _slvl: Byte;
@@ -27,26 +30,43 @@ var
   _click_lvl_cell : LevelCell;
   _close_window_result : TWindowResult;
   _map_change, _remind_draw : Boolean;
+  _dialog_shown : Boolean;   // the click was handled by a modal window
 
 
 
-function AddGold(old_type, new_type : CellType; gold_n : ShortInt): Boolean;
+// can a map cell change old_type -> new_type? counts the gold, at most 8
+function ChangeCell(old_type, new_type : CellType): Boolean;
   begin
-    Result := (old_type <> CellType.Gold) AND (new_type = CellType.Gold) AND (gold_n < 8);
+    Result := false;
+    if (old_type = CellType.Error) OR (new_type = CellType.Error) OR (old_type = new_type) then exit;
+
+    if new_type = CellType.Gold then
+      begin
+        if _gold_n >= 8 then exit;
+        inc(_gold_n);
+      end
+    else if old_type = CellType.Gold then
+      begin
+        if _gold_n <= 0 then exit;
+        dec(_gold_n);
+      end;
+
+    Result := true;
   end;
 
-function RemGold(old_type, new_type : CellType; gold_n : ShortInt): Boolean;
-  begin
-    Result := (old_type = CellType.Gold) AND (new_type <> CellType.Gold) AND (gold_n > 0);
-  end;
+// the object column cell under the mouse becomes the tool of a mouse button
+procedure PickTool(tool : LevelGrid);
+  var
+    _t : CellType;
 
-function CheckLevelMapChange(old_type, new_type : CellType; gold_n : ShortInt): Boolean;
   begin
-    Result := (old_type <> CellType.Error) AND (new_type <> CellType.Error) AND (old_type <> new_type)
-      AND (
-        (AddGold(old_type, new_type, gold_n) XOR RemGold(old_type, new_type, gold_n))
-        XOR ((old_type <> CellType.Gold) and (new_type <> CellType.Gold))
-      );
+    _t := Grid_OBJ.GetClickedCellType(MyMouse.X, MyMouse.Y);
+
+    if (_t <> CellType.Error) and (_t <> tool.GetTypeCell(0, 0)) then
+      begin
+        tool.SetTypeCell(0, 0, _t);
+        tool.DrawCell(0, 0);
+      end;
   end;
 
 // objects are created once and cleared on every "New" -
@@ -103,6 +123,9 @@ begin
   SetNormal;
   DrawBackground;
 
+  // before InitNewMap: it clears the name
+  Map_NAME := TFileLine.Create(6, 5, '');
+
   InitNewMap;
 
   Grid_L   := LevelGrid.Init(261, 32, 1, 1);
@@ -114,10 +137,8 @@ begin
   NewBtn   := IconButton.Init(161, 2, IconButtonType.NewLvl);
   ExitBtn  := IconButton.Init(298, 178, IconButtonType.ExitApp);
 
-  Map_NAME := TFileLine.Create(6, 5, '');
-
-  FileModal    := TModal.Create(_file_w_x, _file_w_y, ModalType.FileWindow);
-  NotSaveModal := TModal.Create(_not_sav_w_t, _not_sav_w_txt, _window_x, _window_y, ModalType.YesNoWindow);
+  FileModal    := TModal.Create('', [], _file_w_x, _file_w_y, ModalType.FileWindow);
+  NotSaveModal := TModal.Create(_not_sav_w_t, [_not_sav_w_txt1, _not_sav_w_txt2], _window_x, _window_y, ModalType.YesNoWindow);
 
   Grid_OBJ.SetTypeCell(0, 0, CellType.Gold);
   Grid_OBJ.SetTypeCell(0, 1, CellType.Gem);
@@ -147,11 +168,12 @@ begin
     end;
 
   repeat
-    MouseUpdate;
+    MouseRead(MyMouse);
 
     if AnyBtnClc(MyMouse.Btn, prev_mouse_lb, prev_mouse_rb) then
       begin
         MouseHide;
+        _dialog_shown := false;
 
         // LEFT BUTTON CLICK
         if LBtnRelease(MyMouse.Btn, prev_mouse_lb) then
@@ -180,7 +202,9 @@ begin
             else if LoadBtn.IsClick(MyMouse.X, MyMouse.Y) then    // Click Load
               begin
                 FileModal.Show;
+                // WaitResult leaves the last click inside the window in MyMouse
                 _close_window_result := FileModal.WaitResult(MyMouse.X, MyMouse.Y);
+                _dialog_shown := true;
                 if length(_close_window_result.S) > 4 then
                   begin
                     Map_OBJ.LoadMap(_close_window_result.S);
@@ -195,71 +219,45 @@ begin
               begin
                 InitNewMap;
               end
-            else if Map_NAME.IsClick(MyMouse.X, MyMouse.Y) then // EDIT FILE NAME
-              begin
-                MouseHide;
-                Map_NAME.EditName;
-                MouseShow;
-              end
+            else if Map_NAME.IsClick(MyMouse.X, MyMouse.Y) then // EDIT FILE NAME (mouse is hidden)
+              Map_NAME.EditName
             else if Grid_OBJ.IsClick(MyMouse.X, MyMouse.Y) then // CHANGE LEFT BUTTON ELEMENT
-              begin
-                _click_cell_type := Grid_OBJ.GetClickedCellType(MyMouse.X, MyMouse.Y);
-
-                if ((_click_cell_type <> CellType.Error) and (_click_cell_type <> Grid_L.GetTypeCell(0, 0))) then
-                  begin
-                    Grid_L.SetTypeCell(0, 0, _click_cell_type);
-                    Grid_L.DrawCell(0, 0);
-                  end;
-              end;
+              PickTool(Grid_L);
 
           end;
         
         // RIGHT BUTTON CLICK
-        if RBtnRelease(MyMouse.Btn, prev_mouse_rb) then
+        if RBtnRelease(MyMouse.Btn, prev_mouse_rb) AND Grid_OBJ.IsClick(MyMouse.X, MyMouse.Y) then
+          PickTool(Grid_R);  // CHANGE RIGHT BUTTON ELEMENT
+
+        // the click that closed a window must not reach the map under it
+        if _dialog_shown then
+          // nothing
+        else if Grid_LVL.IsClick(MyMouse.X, MyMouse.Y) then  // PUT OBJECT INTO MAP
           begin
-            
-            if Grid_OBJ.IsClick(MyMouse.X, MyMouse.Y) then // CHANGE RIGHT BUTTON ELEMENT
+            _click_cell_type := specialize IfElse<CellType>(RBtnRelease(MyMouse.Btn, prev_mouse_rb), Grid_R.GetTypeCell(0, 0), Grid_L.GetTypeCell(0, 0));
+            _click_lvl_cell := Grid_LVL.GetClickedCell(MyMouse.X, MyMouse.Y);
+
+            if ChangeCell(_click_lvl_cell.GetType, _click_cell_type) then
               begin
-                _click_cell_type := Grid_OBJ.GetClickedCellType(MyMouse.X, MyMouse.Y);
+                Grid_LVL.SetTypeCell(_click_lvl_cell.X, _click_lvl_cell.Y, _click_cell_type);
+                Grid_LVL.DrawCell(_click_lvl_cell.X, _click_lvl_cell.Y);
 
-                if ((_click_cell_type <> CellType.Error) and (_click_cell_type <> Grid_R.GetTypeCell(0, 0))) then
-                  begin
-                    Grid_R.SetTypeCell(0, 0, _click_cell_type);
-                    Grid_R.DrawCell(0, 0);
-                  end;
+                Map_OBJ.SetType(_click_lvl_cell.X, _click_lvl_cell.Y, _click_cell_type);
+                _map_change := true;
               end;
-
+          end
+        else if Map_OBJ.IsClick(MyMouse.X, MyMouse.Y) then // CHANGE LEVEL
+          begin
+            _slvl := Map_OBJ.SelectLevel(MyMouse.X, MyMouse.Y);
+            if btwn(_slvl, 0, 7) then
+              begin
+                Grid_LVL.SetMap(Map_OBJ.GetLevel(_slvl));
+                Map_OBJ.SetActive(_slvl);
+                Map_OBJ.DrawLvl(_slvl);
+                _gold_n := Map_OBJ.CalcGold(_slvl);
+              end;
           end;
-
-          if Grid_LVL.IsClick(MyMouse.X, MyMouse.Y) then  // PUT OBJECT INTO MAP
-            begin
-              _click_cell_type := specialize IfElse<CellType>(RBtnRelease(MyMouse.Btn, prev_mouse_rb), Grid_R.GetTypeCell(0, 0), Grid_L.GetTypeCell(0, 0));
-              _click_lvl_cell := Grid_LVL.GetClickedCell(MyMouse.X, MyMouse.Y);
-
-              if CheckLevelMapChange(_click_lvl_cell.GetType, _click_cell_type, _gold_n) then
-                begin
-                  if AddGold(_click_lvl_cell.GetType, _click_cell_type, _gold_n) then
-                    inc(_gold_n)
-                  else if RemGold(_click_lvl_cell.GetType, _click_cell_type, _gold_n) then
-                    dec(_gold_n);
-
-                  Grid_LVL.SetTypeCell(_click_lvl_cell.X, _click_lvl_cell.Y, _click_cell_type);
-                  Grid_LVL.DrawCell(_click_lvl_cell.X, _click_lvl_cell.Y);
-
-                  Map_OBJ.SetType(_click_lvl_cell.X, _click_lvl_cell.Y, _click_cell_type);
-                  _map_change := true;
-                end;
-            end
-          else if Map_OBJ.IsClick(MyMouse.X, MyMouse.Y) then // CHANGE LEVEL
-            begin
-              _slvl := Map_OBJ.SelectLevel(MyMouse.X, MyMouse.Y);
-              if btwn(_slvl, 0, 7) then
-                begin
-                  Grid_LVL.SetMap(Map_OBJ.GetLevel(_slvl));
-                  Map_OBJ.SetActive(_slvl);
-                  Map_OBJ.DrawLvl(_slvl);
-                end;
-            end;
 
         DontForgetSaveMap;
         MouseShow;

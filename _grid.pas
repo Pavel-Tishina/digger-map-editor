@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 {$INLINE ON}
 
@@ -6,7 +7,7 @@ unit _grid;
 interface
 
 uses
-  _cell, draw, _types, _map;
+  _cell, _types, _map;
 
 type
   Cells = array of array of LevelCell;
@@ -18,8 +19,7 @@ type
       _grid_size= 17;
 
     var
-      _xn, _yn: Byte; 
-      _offset: Word;
+      _xn, _yn: Byte;
       _cells: Cells;
 
     constructor Init(xpos, ypos: Word; xc, yc: Byte);
@@ -28,15 +28,15 @@ type
     procedure Draw;
     procedure DrawCell(x, y: Byte);
 
-    function GetTypeCell(x, y: Byte): CellType; inline;
+    // not inline: every inlined copy adds code
+    function GetTypeCell(x, y: Byte): CellType;
     procedure SetTypeCell(x, y: Byte; t: CellType);
 
-    function GetClickedCell(x, y: Word): LevelCell; inline;
+    function GetClickedCell(x, y: Word): LevelCell;
 
-    function GetCellCoord(mouse_coord, start_coord: Word; lim : Byte): Byte; inline;
-    
+    function GetCellCoord(mouse_coord, start_coord: Word; lim : Byte): Byte;
+
     function GetClickedCellType(x, y: Word): CellType;
-    procedure SetClickedCellType(x, y: Word; t : CellType);
 
     procedure SetMap(lvl: Level);
     function CellXYMatch(x, y: Byte): Boolean; inline;
@@ -143,7 +143,6 @@ implementation
     /// /// /// /// /// ///
 
   // cell index by screen coordinate, clamped to 0..lim
-  // (must be implemented before GetClickedCell to be inlined there)
   function LevelGrid.GetCellCoord(mouse_coord, start_coord: Word; lim : Byte): Byte;
     var
       _c : Word;
@@ -152,7 +151,8 @@ implementation
       if mouse_coord <= start_coord then
         exit(0);
 
-      _c := (mouse_coord - start_coord) div _grid_size;
+      // Word(..): Word - Word is LongInt in FPC, its div calls fpc_div_longint
+      _c := Word(mouse_coord - start_coord) div _grid_size;
 
       if _c > lim then
         Result := lim
@@ -176,19 +176,6 @@ implementation
   
     /// /// /// /// /// ///
   
-  procedure LevelGrid.SetClickedCellType(x, y: Word; t : CellType);
-    var
-      _lvl_cell : LevelCell;
-
-    begin
-      _lvl_cell := GetClickedCell(x, y);
-      
-      if (_lvl_cell.GetType <> CellType.Error) then
-        SetTypeCell(_lvl_cell.X, _lvl_cell.Y, t);
-    end; 
-
-    /// /// /// /// /// ///
-
     procedure LevelGrid.SetMap(lvl : Level);
     var
       x, y: Byte;

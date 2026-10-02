@@ -17,4 +17,5 @@ for %%f in (asm\*.asm) do (
 )
 
 rem -B: rebuild all units, FPC does not track changes of the .obj files
-"%FPCBIN%\fpc.exe" -Pi8086 -Tmsdos -WmSmall -B %PROG% || exit /b 1
+rem -O2 -Os: smallest code (-O3 gives the same size)
+"%FPCBIN%\fpc.exe" -Pi8086 -Tmsdos -WmSmall -O2 -Os -B %PROG% || exit /b 1

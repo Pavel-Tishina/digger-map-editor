@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 {$INLINE ON}
 {$PACKENUM 1}   // enums in 1 byte, not 4: Level is 152 bytes instead of 602
@@ -12,10 +13,6 @@ type
   TFileName12 = String[12];               // DOS 8.3 name, 13 bytes instead of 256
   ListOfFileNames = array of TFileName12;
 
-// TODO: stay only ByteData as universal type for image too?
-type
-  ImageData = array of array of Byte;
-
 type
   ByteData = array of Byte;
 
@@ -29,28 +26,23 @@ type
   IconButtonType = (Load, Save, NewLvl, ExitApp, Cross);
 
 type
-  ModalType = (FileWindow, YesNoWindow, SimpleWindow);
+  ModalType = (FileWindow, YesNoWindow);
 
 type
-  TResultType = (rtBoolean, rtShortString, rtWord);
+  TResultType = (rtBoolean, rtShortString);
 
   TWindowResult = packed record
     case Kind: TResultType of
       rtBoolean:     (B: Boolean);
       rtShortString: (S: TFileName12);
-      rtWord:        (W: Word);
     end;
 
 TGUI = class
   _x, _y, _xm, _ym: Word;
 
-  // not virtual: no descendant overrides them.
+  // not virtual: no descendant overrides it.
   // IsClick is not inline - it is called in many places, +1.9K of code
   function IsClick(x, y: Word): Boolean;
-  function ObjX  : Word; inline;
-  function ObjY  : Word; inline;
-  function ObjXM : Word; inline;
-  function ObjYM : Word; inline;
 end;
   
 
@@ -97,26 +89,6 @@ implementation
   function TGUI.IsClick(x, y: Word): Boolean;
     begin
       Result := btwn(x, _x, _xm) and btwn(y, _y, _ym);
-    end;
-  
-  function TGUI.ObjX: Word;
-    begin
-      Result := _x;
-    end;
-
-  function TGUI.ObjY: Word;
-    begin
-      Result := _y;
-    end;
-
-  function TGUI.ObjXM: Word;
-    begin
-      Result := _xm;
-    end;
-
-  function TGUI.ObjYM: Word;
-    begin
-      Result := _ym;
     end;
 
 end.

@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 unit draw;
 
 // Low-level routines: asm/draw.asm
@@ -7,25 +8,19 @@ interface
     var
         LineOffset: array[0..199] of Word;
 
-    procedure PutPixel(x, y: Word; color: Byte);
     procedure PutPixelOffset(pos: Word; color: Byte); pascal; external name 'DRAW_PUTPIXELOFFSET';
     procedure SetPalette(Color, R, G, B: Byte); pascal; external name 'DRAW_SETPALETTE';
-    procedure DelayUS(CXValue, DXValue: Word); pascal; external name 'DRAW_DELAYUS';
-    procedure DelayMS(msec: Word);
     procedure Square(x, y, s: Word; c: Byte);
     procedure FilledSquare(x, y, s: Word; c, cf: Byte);
     procedure Rectangle(x1, y1, x2, y2: Word; c: Byte);
     procedure FilledRectangle(x1, y1, x2, y2: Word; c, cf: Byte);
     procedure Line(X1, Y1, X2, Y2: Integer; Color: Byte); pascal; external name 'DRAW_LINE';
 
-    function GetPixelOffset(pixel_offset: Word): Byte; pascal; external name 'DRAW_GETPIXELOFFSET';
-
     // w x h sprite from src (rows are stride bytes apart) to the screen offset,
     // pixels equal to key are not drawn
     procedure BlitTransparent(src: Pointer; dst_ofs, w, h, stride: Word; key: Byte); pascal; external name 'DRAW_BLITTRANSPARENT';
 
-    // w x h screen area <-> buffer of w * h bytes
-    procedure SaveRect(ofs, w, h: Word; buf: Pointer); pascal; external name 'DRAW_SAVERECT';
+    // buffer of w * h bytes -> w x h screen area
     procedure RestoreRect(buf: Pointer; ofs, w, h: Word); pascal; external name 'DRAW_RESTORERECT';
 
 implementation
@@ -40,20 +35,6 @@ implementation
 
     // vertical span: count pixels down from offset
     procedure VSpan(ofs, count: Word; color: Byte); pascal; external name 'DRAW_VSPAN';
-
-    ////////////////////////////////////////////
-
-    procedure DelayMS(msec: Word);
-        begin
-            DelayUS($0000, msec * 1000);
-        end;
-
-    ////////////////////////////////////////////
-
-    procedure PutPixel(x, y: Word; color: Byte);
-        begin
-            PutPixelOffset(LineOffset[y] + x, color)
-        end;
 
     ////////////////////////////////////////////
 

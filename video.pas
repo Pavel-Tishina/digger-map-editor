@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 unit video;
 
 // Implementation: asm/video.asm

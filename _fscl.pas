@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
 unit _fscl;
@@ -5,21 +6,18 @@ unit _fscl;
 interface
 
 uses
-  io, draw, _types, _util, _font;
+  draw, _types, _util;
 
 type
   TFileScroll = class(TGUI)
     const
       _s_line         = 4;
       _l_line         = 12;
-      _inside_marging = 2;
-      _scroll_xm      = 4;
       _files_window_m = 10;
       _scroll_ym      = 144;
 
     var
       _show         : Boolean;
-      _files        : Word;
       _files_pos_inx: Word;
       _pages        : Word;            // pages of _files_window_m files
       _cube_y       : array of Word;   // integer math: Real needs an 8087
@@ -60,7 +58,6 @@ implementation
       _xm := x + _l_line;
       _ym := y + _scroll_ym + _l_line;
 
-      _files := files;
       _files_pos_inx := 0;
       _pre_inx := 0;
 
