@@ -10,7 +10,6 @@ segment _TEXT public align=1 use16 class=CODE
 
 global VIDEO_SETVIDEOMODE13H
 global VIDEO_SETTEXTMODE
-global VIDEO_WAITKEY
 
 ; procedure SetVideoMode13h;
 VIDEO_SETVIDEOMODE13H:
@@ -22,10 +21,4 @@ VIDEO_SETVIDEOMODE13H:
 VIDEO_SETTEXTMODE:
         mov ax, 0003h
         int 10h
-        ret
-
-; procedure WaitKey;
-VIDEO_WAITKEY:
-        mov ah, 00h
-        int 16h
         ret
