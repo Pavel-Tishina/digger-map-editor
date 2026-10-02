@@ -13,9 +13,9 @@ implementation
 
   const
     _s  : String[66] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?~-+''"\/()[]{}.,:;=_<>#&%^*|@';
-    _r  = 8;             // letter size (8x8)
-    _xn = 21;
-    _yn = 2;
+    _r  = 8;    // letter size (8x8)
+    _xn = 21;   // count letters in line
+    _yn = 2;    // count lines
 
   type
     TGlyph = array[0.._r - 1, 0.._r - 1] of Byte;   // [y, x]
@@ -39,15 +39,11 @@ implementation
     end;
 
   procedure DrawLetter(x, y: Word; c: Char);
-    var
-      _n : Byte;
-
     begin
-      _n := _index[c];
-      if _n = 0 then exit;
+      if _index[c] = 0 then exit;
 
       // TGlyph is [y, x]: 8 rows of 8 bytes
-      BlitTransparent(@_symbols[_n], LineOffset[y] + x, _r, _r, _r, _cf);
+      BlitTransparent(@_symbols[_index[c]], LineOffset[y] + x, _r, _r, _r, _cf);
     end;
 
   procedure DrawString(x, y : Word; const s : String);

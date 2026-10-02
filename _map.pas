@@ -205,10 +205,7 @@ implementation
     function LevelMap.GetLevel(n : Byte): Level;
       begin
         // nil for a wrong n: a new Level here was never freed
-        if btwn(n, 0, 7) then
-          Result := _levels[n]
-        else
-          Result := nil;
+        Result := specialize IfElse<Level>(btwn(n, 0, 7), _levels[n], nil);
       end;
 
     // // // // // // // // // //
@@ -237,11 +234,7 @@ implementation
         if (_l = 0) OR (_l > SizeOf(_content)) then exit; // $FFFF - read error
 
         // skip 2-byte header (#1, #2) written by SaveMap
-        if (_l >= 2) AND (_content[0] = Chr(1)) AND (_content[1] = Chr(2)) then
-          _start := 2
-        else
-          _start := 0;
-
+        _start := specialize IfElse<Word>((_l >= 2) AND (_content[0] = Chr(1)) AND (_content[1] = Chr(2)), 2, 0);
         _lvl_i := 0;
         _yl := 0;
         _xl := 0;

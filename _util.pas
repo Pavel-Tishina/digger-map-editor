@@ -5,7 +5,6 @@ unit _util;
 
 interface
   function btwn(n, a, b: Word): Boolean; inline;
-  function btwne(n, a, b: Word): Boolean; inline;
 
   function AnyBtnClc(b: Word; l_prev, r_prev : Byte): Boolean; inline;
   function LBtnRelease(b : Word; prev : Byte): Boolean; inline;
@@ -20,11 +19,6 @@ implementation
   function btwn(n, a, b: Word): Boolean;
     begin
       btwn := (n >= a) AND (n <= b);
-    end;
-
-  function btwne(n, a, b: Word): Boolean;
-    begin
-      btwne := (n > a) AND (n < b);
     end;
 
   function LBtnRelease(b : Word; prev : Byte): Boolean;

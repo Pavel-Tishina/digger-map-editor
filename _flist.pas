@@ -28,7 +28,6 @@ TFileListObj = class(TGUI)
     procedure DrawList;
 
     procedure SelectFile(x, y: Word);
-    // procedure RefreshList;
 
     function GetSelected: ShortString;
 

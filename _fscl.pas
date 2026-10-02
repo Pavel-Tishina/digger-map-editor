@@ -36,8 +36,8 @@ type
     function Action(x, y: Word): ShortInt;
     function GetScrollLengthYM(posY : Byte): Byte;
 
-    procedure DrawScrollButton(isUp: Boolean);
-    procedure DrawScrollButtonArrow(isUp: Boolean);
+    procedure DrawScrollButton(scrolling: ScrollType);
+    procedure DrawScrollButtonArrow(scrolling: ScrollType);
     procedure DrawScrollButtonArrows;
     procedure DrawScrollLine;
   end;
@@ -72,7 +72,6 @@ implementation
       if _cube_ym <= 1 then
         _cube_ym := 2;
 
-      // = trunc(_y + _l_line + _scroll_ym / _pages * _i)
       for _i := 0 to _pages - 1 do
         _cube_y[_i] := _y + _l_line + (Word(_scroll_ym) * _i) div _pages;
 
@@ -94,11 +93,11 @@ implementation
 
   // // // // // // // // // 
 
-  procedure TFileScroll.DrawScrollButton(isUp: Boolean);
+  procedure TFileScroll.DrawScrollButton(scrolling: ScrollType);
     var
       __y : Byte;
     begin
-      __y := specialize IfElse<Byte>(isUp, _scroll_ym, 0);
+      __y := specialize IfElse<Byte>(scrolling = ScrollType.UP, _scroll_ym, 0);
 
       Rectangle(_x, _y + __y, _x + _l_line, _y + __y + _l_line, 7);
       Line(_x + _s_line, _y + __y, _x + _s_line + _s_line, _y + __y, 8);
@@ -109,11 +108,11 @@ implementation
 
   // // // // // // // // //
 
-  procedure TFileScroll.DrawScrollButtonArrow(isUp: Boolean);
+  procedure TFileScroll.DrawScrollButtonArrow(scrolling: ScrollType);
     var __y : Word;
 
     begin
-      if (isUp = True) then
+      if (scrolling = ScrollType.UP) then   // UP
         begin
           FilledSquare(_x + 1, _y + 1, _l_line - 2, 8, 8);
           if (_files_pos_inx > 0) then
@@ -123,7 +122,7 @@ implementation
               Rectangle(_x + 3, _y + 9, _x + 9, _y + 10, 7);
             end;
         end
-      else if (isUp = False) then
+      else                                  // DOWN
         begin
           FilledSquare(_x + 1, _ym - _l_line + 1, _l_line - 2, 8, 8);
           if (_files_pos_inx < _pages - 1) then
@@ -138,8 +137,8 @@ implementation
 
   procedure TFileScroll.DrawScrollButtonArrows;
     begin
-      DrawScrollButtonArrow(true);
-      DrawScrollButtonArrow(false);
+      DrawScrollButtonArrow(ScrollType.UP);
+      DrawScrollButtonArrow(ScrollType.DOWN);
     end;
 
   // // // // // // // // //
@@ -154,6 +153,7 @@ implementation
   function TFileScroll.GetScrollLengthYM(posY : Byte): Byte;
     var
       _v1, _v2 : Byte;
+
     begin
       _v1 := posY + _cube_ym;
       _v2 := _ym - _l_line;
@@ -179,8 +179,8 @@ implementation
     begin
       if _show then
         begin
-          DrawScrollButton(false);
-          DrawScrollButton(true);
+          DrawScrollButton(ScrollType.DOWN);
+          DrawScrollButton(ScrollType.UP);
           DrawScrollButtonArrows;
 
           DrawScrollLine;

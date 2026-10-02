@@ -9,14 +9,18 @@ uses
   _util;
 
 type
-  TFileName12 = String[12];     // DOS 8.3 name, 13 bytes instead of 256
+  TFileName12 = String[12];               // DOS 8.3 name, 13 bytes instead of 256
   ListOfFileNames = array of TFileName12;
 
+// TODO: stay only ByteData as universal type for image too?
 type
   ImageData = array of array of Byte;
 
 type
   ByteData = array of Byte;
+
+type
+  ScrollType = (UP, DOWN);
 
 type
   CellType = (Field, Gold, Gem, Hole, TonnelH, TonnelV, Error);
@@ -36,13 +40,6 @@ type
       rtShortString: (S: TFileName12);
       rtWord:        (W: Word);
     end;
-
-type
-  TWindowCloseResult = record
-    _close: Boolean;
-    _fname: ShortString;
-    _btn_n: Byte;
-  end;
 
 TGUI = class
   _x, _y, _xm, _ym: Word;
