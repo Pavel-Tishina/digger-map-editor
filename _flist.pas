@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
 unit _flist;
@@ -5,7 +6,7 @@ unit _flist;
 interface
 
 uses
-  io, draw, _types, _util, _font, _fscl, _fline;
+  io, _types, _util, _fscl, _fline;
 
 type
   TFileArray = array of TFileLine;          
@@ -43,8 +44,7 @@ implementation
       __n, __y : Word;
       __l : Byte;
     begin
-      // one call: FindFiles2 counts and lists the files itself
-      _files := FindFiles2('\MAPS\');
+      _files := FindFiles('\MAPS\');
       __n := length(_files);
 
       if __n = 0 then
@@ -143,7 +143,6 @@ implementation
       for __i := 0 to length(_f_lines) - 1 do
         begin
           _f_lines[__i].Hide;
-          // writeln(__i, ' ', __j, ' ', length(_files), ' ', _files[__j]);
           if __j < length(_files) then
             begin
               _f_lines[__i].SetName(_files[__j]);
@@ -181,7 +180,6 @@ implementation
       if (_scroll <> nil) and _scroll.IsClick(x, y) then
         begin
           __i := _scroll.Action(x, y);
-          // writeln(__i, '  ', _p, ' = ', (__i >= 0) and (__i <> _p));
           if (__i >= 0) and (__i <> _p) then
             RefreshList(__i);
         end

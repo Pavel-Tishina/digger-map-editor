@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
 unit _fline;
@@ -8,7 +9,7 @@ uses
   io, draw, _types, _util, _font;
 
 const
-  _letters        : ShortString = '-_+![]()';
+  _letters        = '-_+![]()';
 
 type
   TFileLine = class(TGUI)
@@ -76,7 +77,7 @@ implementation
 
   procedure TFileLine.Draw(edit: Boolean);
     var
-      _fy, _o, _oe: Word;
+      _fy, _o, _oe, _r: Word;
 
     begin
       Rectangle(_x, _y, _x + _h_line, _ym, 7);
@@ -94,7 +95,8 @@ implementation
           begin
             _o  := LineOffset[_fy] + _x + 1;
             _oe := LineOffset[_fy] + _xm - 1;
-            inc(_o, (6 - _o mod 6) mod 6);
+            _r := _o mod 6;   // not (6 - _o mod 6) mod 6: that is LongInt math
+            if _r <> 0 then inc(_o, 6 - _r);
             while _o <= _oe do
               begin
                 PutPixelOffset(_o, 0);
@@ -129,44 +131,37 @@ implementation
 
   // // // // // // // // //  
   
+  // the name always ends with _name_ext (4 chars): edit it in place,
+  // moving the extension instead of copy + concat
   procedure TFileLine.EditName;
     var
-      _s : ShortString;
       _l : Byte;
       _k : Word;
-      _e : Boolean;
 
     begin
       if length(_file_name) = 0 then
         SetName(_name_ext);
-      
-      Draw(true);
-      _e := True;
-      repeat
-        if KeyPressed then
-          begin
-            _l := length(_file_name);
-            _k := ReadKey;
-            if (_k = 8) AND (_l > 4) then
-              begin
-                _s := copy(_file_name, 0, _l - 5);
-                SetName(_s + _name_ext);
-                Draw(true);
-              end
-            else if ValidLetter(_k) AND (_l < 12) then
-              begin
-                _s := copy(_file_name, 0, _l - 4) + chr(_k);
-                SetName(_s + _name_ext);
-                Draw(true);
-              end
-            else if ((_k = 10) OR (_k = 13) OR (_k = 27)) AND (_l > 4) then
-              begin
-                Draw;
-                _e := False;
-              end;
-          end;
 
-      until (NOT _e);
+      Draw(true);
+      repeat
+        _l := length(_file_name);
+        _k := ReadKey;   // waits for a key
+        if (_k = 8) AND (_l > 4) then
+          begin
+            Move(_file_name[_l - 3], _file_name[_l - 4], 4);
+            _file_name[0] := Chr(_l - 1);
+            Draw(true);
+          end
+        else if ValidLetter(_k) AND (_l < 12) then
+          begin
+            Move(_file_name[_l - 3], _file_name[_l - 2], 4);
+            _file_name[_l - 3] := Chr(_k);
+            _file_name[0] := Chr(_l + 1);
+            Draw(true);
+          end;
+      until ((_k = 10) OR (_k = 13) OR (_k = 27)) AND (_l > 4);
+
+      Draw;
     end;
 
   // // // // // // // // //  

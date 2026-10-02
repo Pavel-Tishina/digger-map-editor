@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 unit _mouse;
 
 // Implementation: asm/mouse.asm
@@ -20,17 +21,10 @@ var
     procedure MouseShow; pascal; external name 'MOUSE_SHOW';
     procedure MouseHide; pascal; external name 'MOUSE_HIDE';
 
-    procedure MouseUpdate;
+    procedure MouseRead(var State: TMouseState); pascal; external name 'MOUSE_READ';
 
 implementation
 
 {$L asm/mouse.obj}
-
-    procedure MouseRead(var State: TMouseState); pascal; external name 'MOUSE_READ';
-
-    procedure MouseUpdate;
-        begin
-            MouseRead(MyMouse);
-        end;
 
 end.

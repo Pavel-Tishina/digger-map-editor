@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
 unit _icons;

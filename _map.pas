@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 {$INLINE ON}
 
@@ -17,8 +18,8 @@ type
     constructor Init;
     procedure Clear;
     
-    procedure SetType(x, y: Byte; t: CellType); inline;
-    function GetType(x, y: Byte): CellType; inline;
+    procedure SetType(x, y: Byte; t: CellType);
+    function GetType(x, y: Byte): CellType;
   end;
 
   /// LevelMap ///
@@ -48,15 +49,20 @@ type
     function SelectLevel(x, y: Word): Byte;
     
     function GetLevel(n : Byte): Level;
-    function GetLevel: Level;
 
     procedure LoadMap(const f: String);
     procedure SaveMap(const f: String);
+
+    function CalcGold(n: Word): ShortInt;
   end;
 
     
-
 implementation
+
+  function CheckXYLvl(x, y: Byte): Boolean;
+    begin
+      Result := btwn(x, 0, 14) AND btwn(y, 0, 9);
+    end;
 
     /// Level Impl ///
 
@@ -78,14 +84,13 @@ implementation
 
   procedure Level.SetType(x, y: Byte; t: CellType);
     begin
-      if btwn(x, 0, 14) AND btwn(y, 0, 9) then _lvl[x, y] := t;
+      if CheckXYLvl(x, y) then _lvl[x, y] := t;
     end;
 
   
   function Level.GetType(x, y: Byte): CellType;
     begin
-      // not IfElse: it would read _lvl[x, y] before the bounds check
-      if btwn(x, 0, 14) AND btwn(y, 0, 9) then
+      if CheckXYLvl(x, y) then
         Result := _lvl[x, y]
       else
         Result := CellType.Error;
@@ -196,7 +201,7 @@ implementation
       begin
         if NOT IsClick(x, y) then exit(255);
 
-        Result := (x - _x) div _xm_c;
+        Result := Word(x - _x) div _xm_c;
         if Result >= _lvl_n then Result := _lvl_n - 1;
       end;
 
@@ -206,13 +211,6 @@ implementation
       begin
         // nil for a wrong n: a new Level here was never freed
         Result := specialize IfElse<Level>(btwn(n, 0, 7), _levels[n], nil);
-      end;
-
-    // // // // // // // // // //
-
-    function LevelMap.GetLevel: Level;
-      begin
-        Result := GetLevel(_active);
       end;
 
     // // // // // // // // // //
@@ -296,5 +294,19 @@ implementation
       end;
 
     // // // // // // // // // //
+
+    function LevelMap.CalcGold(n: Word): ShortInt;
+      var
+        _xl, _yl: Byte;
+
+      begin
+        if NOT btwn(n, 0, 7) then exit(0);
+        
+        Result := 0;
+        for _yl := 0 to 9 do
+          for _xl := 0 to 14 do
+            if _levels[n].GetType(_xl, _yl) = CellType.Gold then
+              inc(Result);
+      end;
 
 end.

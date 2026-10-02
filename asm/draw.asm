@@ -12,14 +12,11 @@ VIDEO_SEG equ 0A000h
 segment _TEXT public align=1 use16 class=CODE
 
 global DRAW_PUTPIXELOFFSET
-global DRAW_GETPIXELOFFSET
 global DRAW_SETPALETTE
-global DRAW_DELAYUS
 global DRAW_FILLSPAN
 global DRAW_VSPAN
 global DRAW_LINE
 global DRAW_BLITTRANSPARENT
-global DRAW_SAVERECT
 global DRAW_RESTORERECT
 
 ; procedure PutPixelOffset(pos: Word; color: Byte);
@@ -40,23 +37,6 @@ DRAW_PUTPIXELOFFSET:
         pop es
         pop bp
         ret 4
-
-; function GetPixelOffset(pixel_offset: Word): Byte;
-;   [bp+4] = pixel_offset
-DRAW_GETPIXELOFFSET:
-        push bp
-        mov bp, sp
-        push es
-
-        mov ax, VIDEO_SEG
-        mov es, ax
-
-        mov bx, [bp+4]
-        mov al, [es:bx]
-
-        pop es
-        pop bp
-        ret 2
 
 ; procedure SetPalette(Color, R, G, B: Byte);
 ;   [bp+10] = Color
@@ -82,21 +62,6 @@ DRAW_SETPALETTE:
 
         pop bp
         ret 8
-
-; procedure DelayUS(CXValue, DXValue: Word);
-;   [bp+6] = CXValue
-;   [bp+4] = DXValue
-DRAW_DELAYUS:
-        push bp
-        mov bp, sp
-
-        mov ah, 86h
-        mov cx, [bp+6]
-        mov dx, [bp+4]
-        int 15h
-
-        pop bp
-        ret 4
 
 ; procedure FillSpan(ofs, count: Word; color: Byte);
 ;   horizontal span: count pixels from offset, 2 pixels per write
@@ -213,51 +178,6 @@ DRAW_BLITTRANSPARENT:
         pop es
         pop bp
         ret 12
-
-; procedure SaveRect(ofs, w, h: Word; buf: Pointer);
-;   copies a w x h screen area at ofs into DS:buf (w * h bytes)
-;   [bp+10] = ofs
-;   [bp+8]  = w
-;   [bp+6]  = h
-;   [bp+4]  = buf
-DRAW_SAVERECT:
-        push bp
-        mov bp, sp
-        push ds
-        push es
-        push si
-        push di
-
-        mov ax, ds
-        mov es, ax              ; ES:DI -> buffer
-        mov di, [bp+4]
-        mov si, [bp+10]
-        mov bx, [bp+8]          ; BX = w
-        mov dx, [bp+6]          ; DX = h
-        mov ax, VIDEO_SEG
-        mov ds, ax              ; DS:SI -> screen, params are SS:BP based
-        cld
-
-.row:
-        test dx, dx
-        jz .done
-        mov cx, bx
-        shr cx, 1               ; words, CF = odd byte
-        rep movsw
-        adc cx, cx
-        rep movsb
-        add si, 320
-        sub si, bx
-        dec dx
-        jmp .row
-
-.done:
-        pop di
-        pop si
-        pop es
-        pop ds
-        pop bp
-        ret 8
 
 ; procedure RestoreRect(buf: Pointer; ofs, w, h: Word);
 ;   copies w * h bytes from DS:buf to a w x h screen area at ofs

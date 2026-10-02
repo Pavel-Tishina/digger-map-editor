@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
 unit _mbtn;
@@ -11,7 +12,6 @@ type
   TModalButton = class(TGUI)
     _txt: ShortString;
 
-    constructor Create(x, y: Word; const txt: ShortString);
     constructor Create(x, y: Word; minx: Byte; const txt: ShortString);
     procedure Draw;
 
@@ -19,11 +19,6 @@ type
 
 
 implementation
-
-    constructor TModalButton.Create(x, y: Word; const txt: ShortString);
-      begin
-        Create(x, y, 0, txt);
-      end;
 
     constructor TModalButton.Create(x, y: Word; minx: Byte; const txt: ShortString);
       begin
@@ -40,7 +35,7 @@ implementation
       begin
         Rectangle(_x, _y, _xm, _ym, 0);
         FilledRectangle(_x + 1, _y + 1, _xm - 1, _ym - 1, 8, 0);
-        DrawString(_x + ((_xm - _x) div 2) - (length(_txt) * 4), _y + 3, _txt);
+        DrawString(_x + Word(_xm - _x) div 2 - length(_txt) * 4, _y + 3, _txt);
       end;
  
 end.

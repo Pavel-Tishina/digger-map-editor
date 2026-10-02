@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 {$INLINE ON}
 
@@ -9,8 +10,6 @@ interface
   function AnyBtnClc(b: Word; l_prev, r_prev : Byte): Boolean; inline;
   function LBtnRelease(b : Word; prev : Byte): Boolean; inline;
   function RBtnRelease(b : Word; prev : Byte): Boolean; inline;
-
-  function UpCase(c: Char): Char;
 
   generic function IfElse<T>(b: Boolean; _if, _else: T): T; inline;
 
@@ -35,18 +34,6 @@ implementation
     begin
       AnyBtnClc := LBtnRelease(b, l_prev) XOR RBtnRelease(b, r_prev);
     end;
-
-  function UpCase(c: Char): Char;
-    var 
-      _c : Byte;
-    begin
-      _c := ord(c);
-
-      if btwn(_c, 97, 122) then
-        dec(_c, 32);
-
-      Result := chr(_c);
-    end;  
 
   generic function IfElse<T>(b: Boolean; _if, _else: T): T;
     begin

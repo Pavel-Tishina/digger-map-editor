@@ -1,3 +1,4 @@
+{$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
 // Saved screen area under a window.
@@ -9,7 +10,7 @@ unit _back;
 interface
 
 uses
-  draw, _types;
+  draw;
 
 const
   VIDEO_SEG = $A000;
@@ -50,7 +51,8 @@ implementation
       // bounds are inclusive
       _w := x2 - x1 + 1;
       _h := y2 - y1 + 1;
-      _seg := DosAlloc((LongInt(_w) * _h + 15) shr 4);
+      // 16-bit math is enough: a mode 13h area is at most 64000 bytes
+      _seg := DosAlloc((_w * _h + 15) shr 4);
 
       if _seg = 0 then exit;
 
