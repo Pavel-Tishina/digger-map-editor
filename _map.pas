@@ -12,10 +12,10 @@ uses
   /// Level ///
 
 type
-  Level = class
+  Level = object
     _lvl: array[0..14, 0..9] of CellType;
 
-    constructor Init;
+    procedure Init;
     procedure Clear;
     
     procedure SetType(x, y: Byte; t: CellType);
@@ -25,7 +25,9 @@ type
   /// LevelMap ///
 
 type
-  LevelMap = class(TGUI)
+  PLevel = ^Level;
+
+  LevelMap = object(TGUI)
     const
       _xm_c   = 16;
       _ym_c   = 11;
@@ -36,7 +38,7 @@ type
       _active: Byte;
       _levels: array[0..7] of Level;
 
-    constructor Init(xpos, ypos: Word);
+    procedure Init(xpos, ypos: Word);   // Clear draws the frames
     procedure Clear;
 
     procedure Draw;
@@ -48,7 +50,7 @@ type
 
     function SelectLevel(x, y: Word): Byte;
     
-    function GetLevel(n : Byte): Level;
+    function GetLevel(n : Byte): PLevel;
 
     procedure LoadMap(const f: String);
     procedure SaveMap(const f: String);
@@ -66,7 +68,7 @@ implementation
 
     /// Level Impl ///
 
-  constructor Level.Init;
+  procedure Level.Init;
     begin
       Clear;
     end;
@@ -98,7 +100,7 @@ implementation
 
       /// Level Impl ///
 
-    constructor LevelMap.Init(xpos, ypos: Word);
+    procedure LevelMap.Init(xpos, ypos: Word);
       var
         _FN : Byte;
 
@@ -111,9 +113,7 @@ implementation
         _active := 0;
 
         for _FN := 0 to _lvl_n - 1 do
-          _levels[_FN] := Level.Init;
-
-        DrawFrames;
+          _levels[_FN].Init;
       end;
 
     // // // // // // // // // //
@@ -207,10 +207,12 @@ implementation
 
     // // // // // // // // // //
 
-    function LevelMap.GetLevel(n : Byte): Level;
+    function LevelMap.GetLevel(n : Byte): PLevel;
       begin
-        // nil for a wrong n: a new Level here was never freed
-        Result := specialize IfElse<Level>(btwn(n, 0, 7), _levels[n], nil);
+        if btwn(n, 0, 7) then
+          Result := @_levels[n]
+        else
+          Result := nil;
       end;
 
     // // // // // // // // // //

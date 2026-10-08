@@ -32,6 +32,10 @@ var
   _map_change, _remind_draw : Boolean;
   _dialog_shown : Boolean;   // the click was handled by a modal window
 
+  _col_inx, _col_chg_inx: Longint;
+  _r9, _g9, _b9 : Byte;
+  _r11, _g11, _b11 : Byte;
+  _ic9, _ic11 : ShortInt;
 
 
 // can a map cell change old_type -> new_type? counts the gold, at most 8
@@ -55,7 +59,7 @@ function ChangeCell(old_type, new_type : CellType): Boolean;
   end;
 
 // the object column cell under the mouse becomes the tool of a mouse button
-procedure PickTool(tool : LevelGrid);
+procedure PickTool(var tool : LevelGrid);   // var: objects are values, not references
   var
     _t : CellType;
 
@@ -69,20 +73,13 @@ procedure PickTool(tool : LevelGrid);
       end;
   end;
 
-// objects are created once and cleared on every "New" -
-// recreating them leaked ~7.7K of the near heap per click
+// the objects are static, Init-ed once at start; "New" only clears them
 procedure InitNewMap;
   begin
-    if Grid_LVL = nil then
-      Grid_LVL := LevelGrid.Init(2, 27, 15, 10)
-    else
-      Grid_LVL.Clear;
+    Grid_LVL.Clear;
     Grid_LVL.Draw;
 
-    if Map_OBJ = nil then
-      Map_OBJ := LevelMap.Init(189, 2)
-    else
-      Map_OBJ.Clear;
+    Map_OBJ.Clear;
     Map_OBJ.Draw;
 
     Map_NAME.SetName('');
@@ -105,11 +102,75 @@ procedure DontForgetSaveMap;
   begin
     if _remind_draw = _map_change then exit;
     
-    Square(137, 2, 19, specialize IfElse<Byte>(_map_change, 15, 7));
+    Square(137, 2, 19, specialize IfElse<Byte>(_map_change, 5, 7));
+    if _map_change then
+      begin
+        Line(137, 2, 141, 2, 9);
+        Line(137, 21, 141, 21, 9);
+
+        Line(152, 2, 156, 2, 9);
+        Line(152, 21, 156, 21, 9);
+
+        Line(137, 2, 137, 6, 9);
+        Line(137, 17, 137, 21, 9);
+
+        Line(156, 2, 156, 6, 9);
+        Line(156, 17, 156, 21, 9);
+
+        PutPixelOffset(LineOffset[2] + 146, 9);
+        PutPixelOffset(LineOffset[21] + 146, 9);
+        PutPixelOffset(LineOffset[11] + 137, 9);
+        PutPixelOffset(LineOffset[11] + 156, 9);
+      end;
+
     _remind_draw := _map_change;
   end;
 
+procedure DontForgetSetNameBeforeSave;
+  begin
+    if length(Map_NAME.GetName) <= 4 then Map_NAME.EditName;
+    Map_OBJ.SaveMap(Map_NAME.GetName);
+  end;
+
+procedure ColorMagic;
+  begin
+    inc(_col_inx);
+
+    if (NOT _map_change) OR (_col_inx < 3000) then exit;
+
+    _col_inx := 0;
+    if ((_r9 = 0) AND (_g9 = 0) AND (_b9 = 0))
+        OR ((_r9 = 63) AND (_g9 = 63) AND (_b9 = 63))
+     then
+      begin
+        _ic9 := -_ic9;
+        _ic11 := -_ic11;
+      end;
+      
+      inc(_r9, _ic9);
+      inc(_r11, _ic11);
+      inc(_g9, _ic9);
+      inc(_g11, _ic11);
+      inc(_b9, _ic9);
+      inc(_b11, _ic11);
+
+    SetPalette(9, _r9, _g9, _b9);
+    SetPalette(5, _r11, _g11, _b11);
+  end;
+
 begin
+  _ic9 := -1;
+  _ic11 := 1;
+
+  _r9 := 0;
+  _g9 := 0;
+  _b9 := 0;
+  
+  _r11 := 63;
+  _g11 := 63;
+  _b11 := 63;
+  _col_inx := 0;
+
   _gold_n := 0;
   _slvl := 0;
   _map_change := false;
@@ -123,22 +184,24 @@ begin
   SetNormal;
   DrawBackground;
 
-  // before InitNewMap: it clears the name
-  Map_NAME := TFileLine.Create(6, 5, '');
+  // before InitNewMap: it clears and draws them
+  Map_NAME.Init(6, 5, '');
+  Grid_LVL.Init(2, 27, 15, 10);
+  Map_OBJ.Init(189, 2);
 
   InitNewMap;
 
-  Grid_L   := LevelGrid.Init(261, 32, 1, 1);
-  Grid_R   := LevelGrid.Init(280, 32, 1, 1);
-  Grid_OBJ := LevelGrid.Init(300, 27, 1, 6);
+  Grid_L.Init(261, 32, 1, 1);
+  Grid_R.Init(280, 32, 1, 1);
+  Grid_OBJ.Init(300, 27, 1, 6);
 
-  LoadBtn  := IconButton.Init(113, 2, IconButtonType.Load);
-  SaveBtn  := IconButton.Init(137, 2, IconButtonType.Save);
-  NewBtn   := IconButton.Init(161, 2, IconButtonType.NewLvl);
-  ExitBtn  := IconButton.Init(298, 178, IconButtonType.ExitApp);
+  LoadBtn.Init(113, 2, IconButtonType.Load);
+  SaveBtn.Init(137, 2, IconButtonType.Save);
+  NewBtn.Init(161, 2, IconButtonType.NewLvl);
+  ExitBtn.Init(298, 178, IconButtonType.ExitApp);
 
-  FileModal    := TModal.Create('', [], _file_w_x, _file_w_y, ModalType.FileWindow);
-  NotSaveModal := TModal.Create(_not_sav_w_t, [_not_sav_w_txt1, _not_sav_w_txt2], _window_x, _window_y, ModalType.YesNoWindow);
+  FileModal.Init('', [], _file_w_x, _file_w_y, ModalType.FileWindow);
+  NotSaveModal.Init(_not_sav_w_t, [_not_sav_w_txt1, _not_sav_w_txt2], _window_x, _window_y, ModalType.YesNoWindow);
 
   Grid_OBJ.SetTypeCell(0, 0, CellType.Gold);
   Grid_OBJ.SetTypeCell(0, 1, CellType.Gem);
@@ -186,17 +249,13 @@ begin
 
                 NotSaveModal.Show;
                 if NotSaveModal.WaitResult(MyMouse.X, MyMouse.Y).B then // YES - save before exit
-                  begin
-                    if length(Map_NAME.GetName) <= 4 then Map_NAME.EditName;
-                    Map_OBJ.SaveMap(Map_NAME.GetName); 
-                  end;
-                
+                    DontForgetSetNameBeforeSave;
+            
                 ExitEditor;
-
               end
             else if SaveBtn.IsClick(MyMouse.X, MyMouse.Y) then    // Click Save
               begin
-                Map_OBJ.SaveMap(Map_NAME.GetName);
+                DontForgetSetNameBeforeSave;
                 _map_change := false;
               end
             else if LoadBtn.IsClick(MyMouse.X, MyMouse.Y) then    // Click Load
@@ -265,7 +324,7 @@ begin
     
     prev_mouse_lb := MyMouse.Btn;
     prev_mouse_rb := MyMouse.Btn;
-    
+    ColorMagic;
   until (6 > 7);
 
 end.

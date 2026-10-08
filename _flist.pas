@@ -9,22 +9,22 @@ uses
   io, _types, _util, _fscl, _fline;
 
 type
-  TFileArray = array of TFileLine;          
-
-TFileListObj = class(TGUI)
+TFileListObj = object(TGUI)
     const
       _files_frame = 10;   // files in frame 
       _elem_btw    = 16;   // from Y to Y diff elements
       _scroll_xm   = 105;  // margin scroll from left
     
     var
-      _files : ListOfFileNames;
-      _f_lines : TFileArray;
-      _scroll : TFileScroll;
+      _files : PFileNames;
+      _n_files : Word;
+      _f_lines : array[0.._files_frame - 1] of TFileLine;
+      _n_lines : Byte;
+      _scroll : TFileScroll;   // used only when _n_files > _files_frame
       _s : ShortInt;  // position line
       _p : Byte;      // position index
 
-    constructor Create(x, y: Word);
+    procedure Init(x, y: Word);
     procedure Draw;
     procedure DrawList;
 
@@ -39,13 +39,13 @@ TFileListObj = class(TGUI)
 
 implementation
 
-  constructor TFileListObj.Create(x, y: Word);
+  procedure TFileListObj.Init(x, y: Word);
     var
       __n, __y : Word;
       __l : Byte;
     begin
-      _files := FindFiles('\MAPS\');
-      __n := length(_files);
+      _n_files := FindFiles('\MAPS\', _files);
+      __n := _n_files;
 
       if __n = 0 then
         begin
@@ -61,7 +61,7 @@ implementation
         begin
           _xm := _x + _scroll_xm + 22;
           __l := _files_frame;
-          _scroll := TFileScroll.Create(_x + _scroll_xm, _y, __n);
+          _scroll.Init(_x + _scroll_xm, _y, __n);
         end
       else
         begin
@@ -69,12 +69,12 @@ implementation
           __l := __n;
         end;
 
-      setLength(_f_lines, __l);
+      _n_lines := __l;
 
       __y := _y;
       for __n := 0 to __l - 1 do
         begin
-          _f_lines[__n] := TFileLine.Create(_x, __y, _files[__n]);
+          _f_lines[__n].Init(_x, __y, _files^[__n]);
           inc(__y, _elem_btw);
         end;
       
@@ -91,7 +91,7 @@ implementation
         begin
           DrawList;
 
-          if (length(_files) > _files_frame) then
+          if (_n_files > _files_frame) then
             _scroll.Draw;
         end;
     end;
@@ -102,7 +102,7 @@ implementation
     var
       __i : Byte;
     begin
-      for __i := 0 to length(_f_lines) - 1 do
+      for __i := 0 to _n_lines - 1 do
         _f_lines[__i].Draw;
 
       // the list lives between window openings - keep the real selection
@@ -121,8 +121,8 @@ implementation
         exit;
 
       __p := _p * _files_frame;
-      for __i := 0 to length(_f_lines) - 1 do
-        if _f_lines[__i].IsClick(x, y) and (__p + __i < length(_files)) and (__i <> _s) then
+      for __i := 0 to _n_lines - 1 do
+        if _f_lines[__i].IsClick(x, y) and (__p + __i < _n_files) and (__i <> _s) then
           begin
             _f_lines[_s].Select(false);
             _f_lines[__i].Select(true);
@@ -140,12 +140,12 @@ implementation
 
     begin
       __j := inx * _files_frame;
-      for __i := 0 to length(_f_lines) - 1 do
+      for __i := 0 to _n_lines - 1 do
         begin
           _f_lines[__i].Hide;
-          if __j < length(_files) then
+          if __j < _n_files then
             begin
-              _f_lines[__i].SetName(_files[__j]);
+              _f_lines[__i].SetName(_files^[__j]);
               _f_lines[__i].Draw;
               inc(__j);
             end;
@@ -177,7 +177,7 @@ implementation
         exit;
 
       // _scroll is created only when files don't fit in one frame
-      if (_scroll <> nil) and _scroll.IsClick(x, y) then
+      if (_n_files > _files_frame) and _scroll.IsClick(x, y) then
         begin
           __i := _scroll.Action(x, y);
           if (__i >= 0) and (__i <> _p) then

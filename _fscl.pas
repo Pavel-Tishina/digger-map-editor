@@ -9,7 +9,7 @@ uses
   draw, _types, _util;
 
 type
-  TFileScroll = class(TGUI)
+  TFileScroll = object(TGUI)
     const
       _s_line         = 4;
       _l_line         = 12;
@@ -20,11 +20,11 @@ type
       _show         : Boolean;
       _files_pos_inx: Word;
       _pages        : Word;            // pages of _files_window_m files
-      _cube_y       : array of Word;   // integer math: Real needs an 8087
       _cube_ym      : Byte;
       _pre_inx      : Word; 
 
-    constructor Create(x, y, files: Word);
+    procedure Init(x, y, files: Word);
+    function CubeY(inx: Word): Byte;
 
     function IsUpClick(y: Word): Boolean;
     function IsDownClick(y: Word): Boolean;
@@ -43,10 +43,7 @@ type
 
 implementation
 
-  constructor TFileScroll.Create(x, y, files: Word);
-    var
-      _i : Byte;
-
+  procedure TFileScroll.Init(x, y, files: Word);
     begin
       _show := files > _files_window_m;
 
@@ -62,16 +59,21 @@ implementation
       _pre_inx := 0;
 
       _pages := (files div _files_window_m) + 1;
-      setLength(_cube_y, _pages);
       _cube_ym := _scroll_ym div _pages;
       
         
       if _cube_ym <= 1 then
         _cube_ym := 2;
 
-      for _i := 0 to _pages - 1 do
-        _cube_y[_i] := _y + _l_line + (Word(_scroll_ym) * _i) div _pages;
 
+    end;
+
+  // // // // // // // // //
+
+  // top of the scroll cube for page inx (integer math: Real needs an 8087)
+  function TFileScroll.CubeY(inx: Word): Byte;
+    begin
+      Result := _y + _l_line + (Word(_scroll_ym) * inx) div _pages;
     end;
 
   // // // // // // // // //
@@ -163,10 +165,10 @@ implementation
     var
       _ys : Byte;
     begin
-      _ys := _cube_y[_pre_inx];
+      _ys := CubeY(_pre_inx);
       FilledRectangle(_x + _s_line + 1, _ys, _xm - _s_line - 1, GetScrollLengthYM(_ys),  0, 0);
 
-      _ys := _cube_y[_files_pos_inx];
+      _ys := CubeY(_files_pos_inx);
       FilledRectangle(_x + _s_line + 1, _ys, _xm - _s_line - 1, GetScrollLengthYM(_ys),  8, 8);
     end;
 

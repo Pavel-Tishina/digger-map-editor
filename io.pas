@@ -19,7 +19,8 @@ uses
 
     // DIR / FILE LIST
     // Names of the .DLF files in directory Path (e.g. '\MAPS\')
-    function FindFiles(Path: PChar): ListOfFileNames;
+    // List gets GetMem memory (nil if no files), returns the number of names
+    function FindFiles(Path: PChar; var List: PFileNames): Word;
 
     // KEYBOARD
     // waits for a key, returns the ASCII code only
@@ -42,18 +43,15 @@ implementation
 
     ////////////////////////////////////////////
 
-    function FindFiles(Path: PChar): ListOfFileNames;
-      var
-        _n : Word;
-
+    function FindFiles(Path: PChar; var List: PFileNames): Word;
       begin
-        _n := AsmFindFiles(Path, nil, 0, @SearchSpec[0], @DTA_Buf[0]);
-        setLength(Result, _n);
-        if _n = 0 then exit;
+        List := nil;
+        Result := AsmFindFiles(Path, nil, 0, @SearchSpec[0], @DTA_Buf[0]);
+        if Result = 0 then exit;
 
+        GetMem(List, Result * SizeOf(TFileName12));
         // a file may vanish between the two scans
-        _n := AsmFindFiles(Path, @Result[0], _n, @SearchSpec[0], @DTA_Buf[0]);
-        setLength(Result, _n);
+        Result := AsmFindFiles(Path, List, Result, @SearchSpec[0], @DTA_Buf[0]);
       end;
 
     ////////////////////////////////////////////

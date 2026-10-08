@@ -16,15 +16,16 @@ const
   VIDEO_SEG = $A000;
 
 type
-  TBackGround = class
+  TBackGround = object
     _seg : Word;   // DOS memory block segment, 0 = not allocated
     _w   : Word;   // width in pixels
     _h   : Word;   // height in lines
 
-    constructor Create(x1, y1, x2, y2: Word);
+    // saves the area; IsNull if there is no free DOS memory
+    procedure Init(x1, y1, x2, y2: Word);
     procedure Draw(x, y: Word);
     function IsNull: Boolean;
-    destructor Destroy; override;
+    procedure Done;   // frees the DOS memory block
 
   end;
 
@@ -43,7 +44,7 @@ implementation
 
   // // // // // // // //
 
-  constructor TBackGround.Create(x1, y1, x2, y2: Word);
+  procedure TBackGround.Init(x1, y1, x2, y2: Word);
     var
       _y, _o : Word;
 
@@ -89,12 +90,11 @@ implementation
 
   // // // // // // // //
 
-  destructor TBackGround.Destroy;
+  procedure TBackGround.Done;
     begin
       if _seg <> 0 then
         DosFree(_seg);
       _seg := 0;
-      inherited Destroy;
     end;
 
 end.

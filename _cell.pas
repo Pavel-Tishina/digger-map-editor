@@ -10,7 +10,7 @@ uses
     draw, _types, _icons;
 
 type
-  LevelCell = class
+  LevelCell = object
     const
       _r = 17;
 
@@ -19,7 +19,7 @@ type
       _x, _y: Word;
       _t: CellType;
 
-    constructor Init(xi, yi : Byte; x, y: Word; t: CellType);
+    procedure Init(xi, yi : Byte; x, y: Word; t: CellType);
 
     procedure Draw;
     procedure SetType(t: CellType); inline;
@@ -31,7 +31,7 @@ type
 
 implementation
 
-    constructor LevelCell.Init(xi, yi : Byte; x, y: Word; t: CellType);
+    procedure LevelCell.Init(xi, yi : Byte; x, y: Word; t: CellType);
       begin
         _x := x;
         _y := y;
