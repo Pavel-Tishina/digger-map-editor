@@ -28,6 +28,17 @@ type
   ModalType = (FileWindow, YesNoWindow);
 
 type
+  TonnelDirection = (Nord, West, South, East, None);
+
+type
+  TonnelSet = Set of TonnelDirection;
+
+type
+  TonnelJoin = record
+    t_start, t_dest: TonnelDirection;
+  end;
+
+type
   TResultType = (rtBoolean, rtShortString);
 
   TWindowResult = packed record

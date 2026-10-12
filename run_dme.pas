@@ -32,10 +32,17 @@ var
   _map_change, _remind_draw : Boolean;
   _dialog_shown : Boolean;   // the click was handled by a modal window
 
-  _col_inx, _col_chg_inx: Longint;
+  _bg_c_changer : Byte = 0;
+  _col_inx, _col_inx2: Integer;
   _r9, _g9, _b9 : Byte;
   _r11, _g11, _b11 : Byte;
-  _ic9, _ic11 : ShortInt;
+  
+  _r2, _g2, _b2 : Byte;
+  _r3, _g3, _b3 : Byte;
+  _r13, _g13, _b13 : Byte;
+  _r14, _g14, _b14 : Byte;
+  
+  _ic2_3, _ic9, _ic11 : ShortInt;
 
 
 // can a map cell change old_type -> new_type? counts the gold, at most 8
@@ -132,10 +139,48 @@ procedure DontForgetSetNameBeforeSave;
     Map_OBJ.SaveMap(Map_NAME.GetName);
   end;
 
+procedure BackgroundColorMagic;
+  begin
+    inc(_col_inx2);
+
+    if (_col_inx2 < 1000) then exit;
+    
+    _col_inx2 := 0;
+    if (((_r2 = 5) AND (_g2 = 5) AND (_b2 = 5)) OR ((_r2 = 10) AND (_g2 = 10) AND (_b2 = 10))) then _ic2_3 := - _ic2_3;
+
+      inc(_bg_c_changer);
+      case _bg_c_changer of
+        1 : inc(_r2, _ic2_3); 
+        2 : inc(_g2, _ic2_3);
+        3 : inc(_b2, _ic2_3);
+        4 : dec(_r3, _ic2_3);
+        5 : dec(_g3, _ic2_3);
+        6 : dec(_b3, _ic2_3);
+        7 : inc(_r13, _ic2_3);
+        8 : inc(_g13, _ic2_3);
+        9 : inc(_b13, _ic2_3);
+        10 : dec(_r14, _ic2_3);
+        11 : dec(_g14, _ic2_3);
+        12 : dec(_b14, _ic2_3);
+        else _bg_c_changer := 0;
+      end;
+
+      if btwn(_bg_c_changer, 1, 3) then
+        SetPalette(2, _r2, _g2, _b2)
+      else if btwn(_bg_c_changer, 4, 6) then
+        SetPalette(3, _r3, _g3, _b3)
+      else if btwn(_bg_c_changer, 7, 9) then
+        SetPalette(13, _r13, _g13, _b13)
+      else if btwn(_bg_c_changer, 10, 12) then
+        SetPalette(14, _r14, _g14, _b14);
+
+  end;
+
 procedure ColorMagic;
   begin
-    inc(_col_inx);
+    BackgroundColorMagic;
 
+    inc(_col_inx);
     if (NOT _map_change) OR (_col_inx < 3000) then exit;
 
     _col_inx := 0;
@@ -159,8 +204,27 @@ procedure ColorMagic;
   end;
 
 begin
+  // _bg_c_changer := true;
+  
   _ic9 := -1;
   _ic11 := 1;
+  _ic2_3 := -1;
+  
+  _r2 := 5;
+  _g2 := 5;
+  _b2 := 5;
+
+  _r3 := 10;
+  _g3 := 10;
+  _b3 := 10;
+
+  _r13 := 15;
+  _g13 := 15;
+  _b13 := 15;
+
+  _r14 := 20;
+  _g14 := 20;
+  _b14 := 20;
 
   _r9 := 0;
   _g9 := 0;
@@ -170,6 +234,7 @@ begin
   _g11 := 63;
   _b11 := 63;
   _col_inx := 0;
+  _col_inx2 := 0;
 
   _gold_n := 0;
   _slvl := 0;
@@ -186,7 +251,7 @@ begin
 
   // before InitNewMap: it clears and draws them
   Map_NAME.Init(6, 5, '');
-  Grid_LVL.Init(2, 27, 15, 10);
+  Grid_LVL.Init(2, 27, 15, 10, true);
   Map_OBJ.Init(189, 2);
 
   InitNewMap;

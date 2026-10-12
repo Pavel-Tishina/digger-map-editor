@@ -5,6 +5,7 @@
 unit _util;
 
 interface
+
   function btwn(n, a, b: Word): Boolean; inline;
 
   function AnyBtnClc(b: Word; l_prev, r_prev : Byte): Boolean; inline;
@@ -12,6 +13,8 @@ interface
   function RBtnRelease(b : Word; prev : Byte): Boolean; inline;
 
   generic function IfElse<T>(b: Boolean; _if, _else: T): T; inline;
+  // function IsItTonnelCell(t: CellType): Boolean; inline;
+
 
 implementation
 
@@ -42,5 +45,10 @@ implementation
       else
         Result := _else;
     end;
+
+  // function IsItTonnelCell(t: CellType): Boolean;
+  //   begin
+  //     Result := (t = CellType.Hole) OR (t = CellType.TonnelH) OR (t = CellType.TonnelV);
+  //   end;
 
 end.
