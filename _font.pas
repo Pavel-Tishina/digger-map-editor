@@ -42,7 +42,7 @@ implementation
       _i : Word;
 
     begin
-      if length(_font_file.pixels) = 0 then exit;   // no font file
+      if _font_file.pixels = nil then exit;   // no font file
 
       for _i := 1 to Length(s) do
         if s[_i] <> ' ' then
@@ -57,5 +57,5 @@ begin
       _index[LowerCase(_s[_sidx])] := _sidx;   // lower case -> same glyph
     end;
 
-  _font_file := ArchiveGraphicFile.Init('\DRAFT\ABC_V2.CG2'#0);
+  _font_file.Init('\DRAFT\ABC_V2.CG2'#0);
 end.

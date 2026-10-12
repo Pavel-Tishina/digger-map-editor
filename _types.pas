@@ -11,10 +11,9 @@ uses
 
 type
   TFileName12 = String[12];               // DOS 8.3 name, 13 bytes instead of 256
-  ListOfFileNames = array of TFileName12;
-
-type
-  ByteData = array of Byte;
+  // file name list in GetMem memory: no dynamic arrays, they pull ~3K of RTL
+  TFileNames = array[0..4095] of TFileName12;
+  PFileNames = ^TFileNames;
 
 type
   ScrollType = (UP, DOWN);
@@ -29,6 +28,17 @@ type
   ModalType = (FileWindow, YesNoWindow);
 
 type
+  TonnelDirection = (Nord, West, South, East, None);
+
+type
+  TonnelSet = Set of TonnelDirection;
+
+type
+  TonnelJoin = record
+    t_start, t_dest: TonnelDirection;
+  end;
+
+type
   TResultType = (rtBoolean, rtShortString);
 
   TWindowResult = packed record
@@ -37,7 +47,8 @@ type
       rtShortString: (S: TFileName12);
     end;
 
-TGUI = class
+// object, not class: no VMT, no TObject and exception code from the RTL
+TGUI = object
   _x, _y, _xm, _ym: Word;
 
   // not virtual: no descendant overrides it.
@@ -54,7 +65,7 @@ end;
 implementation
   const
     CELL_TYPE_CHAR : array[CellType] of Char = (' ', 'B', 'C', 'S', 'H', 'V', Chr(0));
-    CELL_TYPE_MAP_PIXEL : array[CellType] of Byte = (10, 12, 2, 0, 0, 0, 15);
+    CELL_TYPE_MAP_PIXEL : array[CellType] of Byte = (10, 12, 6, 0, 0, 0, 15);
     ICON_BTN_FILE : array[IconButtonType] of PChar = ('\DRAFT\LOAD.CG2'#0, '\DRAFT\SAVE.CG2'#0, '\DRAFT\NEW.CG2'#0, '\DRAFT\EXIT.CG2'#0, ''#0);
 
   function CellTypeChar(AType: CellType): Char;

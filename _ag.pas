@@ -10,13 +10,13 @@ uses
   io, draw, _types;
 
 type
-  ArchiveGraphicFile = class
+  ArchiveGraphicFile = object
   public
     bg_color: Byte;
     pixcount, xm: Word;
-    pixels: ByteData;     // decoded image, xm pixels per row, pixcount pixels
+    pixels: PByte;        // decoded image (GetMem), xm pixels per row, pixcount pixels; nil = no image
 
-    constructor Init(file_name: PChar);
+    procedure Init(file_name: PChar);
 
     function GetTrasperentColor: Byte; inline;
 
@@ -42,13 +42,14 @@ implementation
     //   [0]    low nibble: colors, high nibble: format version
     //   [1..2] low 12 bits: image width, high 4 bits: transparent color
     //   [3..4] pixel count
-    constructor ArchiveGraphicFile.Init(file_name: PChar);
+    procedure ArchiveGraphicFile.Init(file_name: PChar);
         var
           _h, _size : Word;
           _colors, _bits, _n : Byte;
           _palette : array[0..15] of Byte;
 
         begin
+          pixels := nil;
           _h := OpenFileRead(file_name);
           if _h = $FFFF then exit;          // no file: empty image, Draw2 draws nothing
 
@@ -94,7 +95,9 @@ implementation
         _x, _n, _r, _cnt: Word;
 
       begin
-        setLength(pixels, pixcount);
+        if pixcount = 0 then exit;
+        GetMem(pixels, pixcount);
+        FillChar(pixels^, pixcount, 0);
         _nb := (1 shl bits) - 1;
         _x := 0;
 
@@ -137,13 +140,13 @@ implementation
         _rows, _rest : Word;
 
       begin
-        if (xm = 0) or (length(pixels) = 0) then exit;
+        if (xm = 0) or (pixels = nil) then exit;
 
         _rows := pixcount div xm;
         _rest := pixcount mod xm;   // last row may be incomplete
 
         if _rows > 0 then
-          BlitTransparent(@pixels[0], LineOffset[y] + x, xm, _rows, xm, bg_color);
+          BlitTransparent(pixels, LineOffset[y] + x, xm, _rows, xm, bg_color);
 
         if _rest > 0 then
           BlitTransparent(@pixels[_rows * xm], LineOffset[y + _rows] + x, _rest, 1, xm, bg_color);

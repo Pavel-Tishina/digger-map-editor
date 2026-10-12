@@ -9,10 +9,10 @@ uses
   _font, _util, draw, _types;
 
 type
-  TModalButton = class(TGUI)
-    _txt: ShortString;
+  TModalButton = object(TGUI)
+    _txt: String[16];   // not ShortString: 256 bytes
 
-    constructor Create(x, y: Word; minx: Byte; const txt: ShortString);
+    procedure Init(x, y: Word; minx: Byte; const txt: ShortString);
     procedure Draw;
 
   end;
@@ -20,7 +20,7 @@ type
 
 implementation
 
-    constructor TModalButton.Create(x, y: Word; minx: Byte; const txt: ShortString);
+    procedure TModalButton.Init(x, y: Word; minx: Byte; const txt: ShortString);
       begin
         _x := x;
         _y := y;

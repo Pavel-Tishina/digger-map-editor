@@ -12,10 +12,10 @@ uses
   /// Level ///
 
 type
-  Level = class
+  Level = object
     _lvl: array[0..14, 0..9] of CellType;
 
-    constructor Init;
+    procedure Init;
     procedure Clear;
     
     procedure SetType(x, y: Byte; t: CellType);
@@ -25,7 +25,9 @@ type
   /// LevelMap ///
 
 type
-  LevelMap = class(TGUI)
+  PLevel = ^Level;
+
+  LevelMap = object(TGUI)
     const
       _xm_c   = 16;
       _ym_c   = 11;
@@ -36,7 +38,7 @@ type
       _active: Byte;
       _levels: array[0..7] of Level;
 
-    constructor Init(xpos, ypos: Word);
+    procedure Init(xpos, ypos: Word);   // Clear draws the frames
     procedure Clear;
 
     procedure Draw;
@@ -48,7 +50,7 @@ type
 
     function SelectLevel(x, y: Word): Byte;
     
-    function GetLevel(n : Byte): Level;
+    function GetLevel(n : Byte): PLevel;
 
     procedure LoadMap(const f: String);
     procedure SaveMap(const f: String);
@@ -59,6 +61,28 @@ type
     
 implementation
 
+  type
+    TMapPath = String[40];
+
+  // _dir + f + #0 by Move: the + of strings links fpc_shortstr_concat(_multi), ~700 bytes
+  procedure MapPath(const f: String; out p: TMapPath);
+    const
+      _dl = Length(LevelMap._dir);
+
+    var
+      _l: Byte;
+
+    begin
+      _l := Length(f);
+      if _l > High(TMapPath) - _dl - 1 then
+        _l := High(TMapPath) - _dl - 1;
+
+      p := LevelMap._dir;
+      Move(f[1], p[_dl + 1], _l);
+      p[_dl + _l + 1] := #0;
+      p[0] := Chr(_dl + _l + 1);
+    end;
+
   function CheckXYLvl(x, y: Byte): Boolean;
     begin
       Result := btwn(x, 0, 14) AND btwn(y, 0, 9);
@@ -66,7 +90,7 @@ implementation
 
     /// Level Impl ///
 
-  constructor Level.Init;
+  procedure Level.Init;
     begin
       Clear;
     end;
@@ -98,7 +122,7 @@ implementation
 
       /// Level Impl ///
 
-    constructor LevelMap.Init(xpos, ypos: Word);
+    procedure LevelMap.Init(xpos, ypos: Word);
       var
         _FN : Byte;
 
@@ -111,9 +135,7 @@ implementation
         _active := 0;
 
         for _FN := 0 to _lvl_n - 1 do
-          _levels[_FN] := Level.Init;
-
-        DrawFrames;
+          _levels[_FN].Init;
       end;
 
     // // // // // // // // // //
@@ -207,10 +229,12 @@ implementation
 
     // // // // // // // // // //
 
-    function LevelMap.GetLevel(n : Byte): Level;
+    function LevelMap.GetLevel(n : Byte): PLevel;
       begin
-        // nil for a wrong n: a new Level here was never freed
-        Result := specialize IfElse<Level>(btwn(n, 0, 7), _levels[n], nil);
+        if btwn(n, 0, 7) then
+          Result := @_levels[n]
+        else
+          Result := nil;
       end;
 
     // // // // // // // // // //
@@ -220,9 +244,9 @@ implementation
         _lvl_i, _xl, _yl: Byte;
         _content: array[0..1201] of Char;
         _h, _i, _l, _start : Word;
-        _path : String[40];
+        _path : TMapPath;
       begin
-        _path := _dir + f + #0;
+        MapPath(f, _path);
         _h := OpenFileRead(@_path[1]);
         if _h = $FFFF then exit;
 
@@ -271,7 +295,7 @@ implementation
         _lvl_i, _xl, _yl: Byte;
         _content: array[0..1201] of Char;
         _h, _i : Word;
-        _path : String[40];
+        _path : TMapPath;
       begin
         
         _content[0] := Chr(1);
@@ -285,7 +309,7 @@ implementation
                 inc(_i);
               end; 
 
-        _path := _dir + f + #0;
+        MapPath(f, _path);
         _h := CreateFile(@_path[1]);
         if _h = $FFFF then exit;
 

@@ -28,9 +28,9 @@ implementation
     end;
 
 begin
-  _gold := ArchiveGraphicFile.Init('\DRAFT\GOLD.CG2'#0);
-  _hole := ArchiveGraphicFile.Init('\DRAFT\HOLE.CG2'#0);
-  _gem := ArchiveGraphicFile.Init('\DRAFT\GEM.CG2'#0);
-  _th := ArchiveGraphicFile.Init('\DRAFT\TH.CG2'#0);
-  _tv := ArchiveGraphicFile.Init('\DRAFT\TV.CG2'#0);
+  _gold.Init('\DRAFT\GOLD.CG2'#0);
+  _hole.Init('\DRAFT\HOLE.CG2'#0);
+  _gem.Init('\DRAFT\GEM.CG2'#0);
+  _th.Init('\DRAFT\TH.CG2'#0);
+  _tv.Init('\DRAFT\TV.CG2'#0);
 end.

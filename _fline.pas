@@ -12,7 +12,7 @@ const
   _letters        = '-_+![]()';
 
 type
-  TFileLine = class(TGUI)
+  TFileLine = object(TGUI)
     const
       _inside_marging   = 2;
       _x_line           = 99;
@@ -23,7 +23,7 @@ type
       var
         _file_name : TFileName12;
 
-    constructor Create(x, y: Word; const file_name: ShortString);
+    procedure Init(x, y: Word; const file_name: ShortString);
     procedure Draw;
     procedure Draw(edit: Boolean);
     procedure Hide;
@@ -43,7 +43,7 @@ implementation
 
   // // // TFileLine // // //
 
-  constructor TFileLine.Create(x, y: Word; const file_name: ShortString);
+  procedure TFileLine.Init(x, y: Word; const file_name: ShortString);
     begin
       _x := x;
       _y := y;

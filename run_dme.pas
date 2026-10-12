@@ -18,8 +18,11 @@ const
   _not_sav_w_txt2 = 'before the exit?';
 
 var
-  prev_mouse_lb, prev_mouse_rb, _slvl: Byte;
-  _gold_n: ShortInt;
+  prev_mouse_lb : Byte = 0;
+  prev_mouse_rb : Byte = 0;
+  _slvl         : Byte = 0;
+  _gold_n       : ShortInt = 0;
+
   Grid_LVL, Grid_OBJ, Grid_L, Grid_R : LevelGrid;
   Map_OBJ : LevelMap;
   LoadBtn, SaveBtn, NewBtn, ExitBtn : IconButton;
@@ -29,10 +32,24 @@ var
   _click_cell_type : CellType;
   _click_lvl_cell : LevelCell;
   _close_window_result : TWindowResult;
-  _map_change, _remind_draw : Boolean;
-  _dialog_shown : Boolean;   // the click was handled by a modal window
+  _map_change   : Boolean = false;
+  _remind_draw  : Boolean = false;
+  _dialog_shown : Boolean = false;   // the click was handled by a modal window
 
+  // initialized variables: a value in the data is 1-2 bytes, an assignment in the code is 5-6
+  _bg_c_changer : Byte = 0;
+  _col_inx  : Word  = 0;
+  _col_inx2 : Word = 0;
+  _r9  : Byte = 0;   _g9  : Byte = 0;   _b9  : Byte = 0;
+  _r11 : Byte = 63;  _g11 : Byte = 63;  _b11 : Byte = 63;
 
+  _r2  : Byte = 5;   _g2  : Byte = 5;   _b2  : Byte = 5;
+  _r3  : Byte = 10;  _g3  : Byte = 10;  _b3  : Byte = 10;
+  _r13 : Byte = 15;  _g13 : Byte = 15;  _b13 : Byte = 15;
+  _r14 : Byte = 20;  _g14 : Byte = 20;  _b14 : Byte = 20;
+
+  _ic       : ShortInt = -1;
+  _ic_save  : ShortInt = -1;
 
 // can a map cell change old_type -> new_type? counts the gold, at most 8
 function ChangeCell(old_type, new_type : CellType): Boolean;
@@ -55,7 +72,7 @@ function ChangeCell(old_type, new_type : CellType): Boolean;
   end;
 
 // the object column cell under the mouse becomes the tool of a mouse button
-procedure PickTool(tool : LevelGrid);
+procedure PickTool(var tool : LevelGrid);   // var: objects are values, not references
   var
     _t : CellType;
 
@@ -69,20 +86,13 @@ procedure PickTool(tool : LevelGrid);
       end;
   end;
 
-// objects are created once and cleared on every "New" -
-// recreating them leaked ~7.7K of the near heap per click
+// the objects are static, Init-ed once at start; "New" only clears them
 procedure InitNewMap;
   begin
-    if Grid_LVL = nil then
-      Grid_LVL := LevelGrid.Init(2, 27, 15, 10)
-    else
-      Grid_LVL.Clear;
+    Grid_LVL.Clear;
     Grid_LVL.Draw;
 
-    if Map_OBJ = nil then
-      Map_OBJ := LevelMap.Init(189, 2)
-    else
-      Map_OBJ.Clear;
+    Map_OBJ.Clear;
     Map_OBJ.Draw;
 
     Map_NAME.SetName('');
@@ -102,19 +112,88 @@ procedure ExitEditor;
 procedure DrawBackground; pascal; external name 'DME_DRAWBACKGROUND';
 
 procedure DontForgetSaveMap;
+  const
+    // corner lines of the Save button frame: x1, y1, x2, y2
+    SAVE_CORNERS: array[0..7, 0..3] of Byte = (
+      (137, 2, 141, 2),   (137, 21, 141, 21),
+      (152, 2, 156, 2),   (152, 21, 156, 21),
+      (137, 2, 137, 6),   (137, 17, 137, 21),
+      (156, 2, 156, 6),   (156, 17, 156, 21));
+
+  var
+    _i: Byte;
+
   begin
     if _remind_draw = _map_change then exit;
     
-    Square(137, 2, 19, specialize IfElse<Byte>(_map_change, 15, 7));
+    Square(137, 2, 19, specialize IfElse<Byte>(_map_change, 5, 7));
+    if _map_change then
+      begin
+        // table, not 8 calls of Line with 5 arguments each
+        for _i := 0 to High(SAVE_CORNERS) do
+          Line(SAVE_CORNERS[_i, 0], SAVE_CORNERS[_i, 1], SAVE_CORNERS[_i, 2], SAVE_CORNERS[_i, 3], 9);
+
+        PutPixelOffset(LineOffset[2] + 146, 9);
+        PutPixelOffset(LineOffset[21] + 146, 9);
+        PutPixelOffset(LineOffset[11] + 137, 9);
+        PutPixelOffset(LineOffset[11] + 156, 9);
+      end;
+
     _remind_draw := _map_change;
   end;
 
-begin
-  _gold_n := 0;
-  _slvl := 0;
-  _map_change := false;
-  _remind_draw := false;
+procedure DontForgetSetNameBeforeSave;
+  begin
+    if length(Map_NAME.GetName) <= 4 then Map_NAME.EditName;
+    Map_OBJ.SaveMap(Map_NAME.GetName);
+  end;
 
+procedure BackgroundColorMagic;
+  begin
+    inc(_col_inx2);
+
+    if (_col_inx2 < 1000) then exit;
+    
+    _col_inx2 := 0;
+    if (((_r2 = 5) AND (_g2 = 5) AND (_b2 = 5)) OR ((_r2 = 10) AND (_g2 = 10) AND (_b2 = 10))) then _ic := - _ic;
+
+      inc(_bg_c_changer);
+      case _bg_c_changer of
+        1  : inc(_r2, _ic);    2 : inc(_g2, _ic);    3 : inc(_b2, _ic);    // Color 2
+        4  : dec(_r3, _ic);    5 : dec(_g3, _ic);    6 : dec(_b3, _ic);    // Color 3
+        7  : inc(_r13, _ic);   8 : inc(_g13, _ic);   9 : inc(_b13, _ic);   // Color 13
+        10 : dec(_r14, _ic);  11 : dec(_g14, _ic);  12 : dec(_b14, _ic);   // Color 14
+        else _bg_c_changer := 0;
+      end;
+
+      if btwn(_bg_c_changer, 1, 3) then
+        SetPalette(2, _r2, _g2, _b2)
+      else if btwn(_bg_c_changer, 4, 6) then
+        SetPalette(3, _r3, _g3, _b3)
+      else if btwn(_bg_c_changer, 7, 9) then
+        SetPalette(13, _r13, _g13, _b13)
+      else if btwn(_bg_c_changer, 10, 12) then
+        SetPalette(14, _r14, _g14, _b14);
+  end;
+
+procedure ColorMagic;
+  begin
+    BackgroundColorMagic;
+
+    inc(_col_inx);
+    if (NOT _map_change) OR (_col_inx < 3000) then exit;
+
+    _col_inx := 0;
+    if ((_r9 = 0) OR (_r9 = 63)) then _ic_save := -_ic_save;
+      
+      inc(_r9,  _ic_save);  inc(_g9,  _ic_save);  inc(_b9,  _ic_save);  // Color 9
+      dec(_r11, _ic_save);  dec(_g11, _ic_save);  dec(_b11, _ic_save);  // Color 11
+
+    SetPalette(9, _r9, _g9, _b9);
+    SetPalette(5, _r11, _g11, _b11);
+  end;
+
+begin
   MyMouse.X := 0;
   MyMouse.Y := 0;
   MyMouse.Btn := 0;
@@ -123,22 +202,24 @@ begin
   SetNormal;
   DrawBackground;
 
-  // before InitNewMap: it clears the name
-  Map_NAME := TFileLine.Create(6, 5, '');
+  // before InitNewMap: it clears and draws them
+  Map_NAME.Init(6, 5, '');
+  Grid_LVL.Init(2, 27, 15, 10, true);
+  Map_OBJ.Init(189, 2);
 
   InitNewMap;
 
-  Grid_L   := LevelGrid.Init(261, 32, 1, 1);
-  Grid_R   := LevelGrid.Init(280, 32, 1, 1);
-  Grid_OBJ := LevelGrid.Init(300, 27, 1, 6);
+  Grid_L.Init(261, 32, 1, 1);
+  Grid_R.Init(280, 32, 1, 1);
+  Grid_OBJ.Init(300, 27, 1, 6);
 
-  LoadBtn  := IconButton.Init(113, 2, IconButtonType.Load);
-  SaveBtn  := IconButton.Init(137, 2, IconButtonType.Save);
-  NewBtn   := IconButton.Init(161, 2, IconButtonType.NewLvl);
-  ExitBtn  := IconButton.Init(298, 178, IconButtonType.ExitApp);
+  LoadBtn.Init(113, 2, IconButtonType.Load);
+  SaveBtn.Init(137, 2, IconButtonType.Save);
+  NewBtn.Init(161, 2, IconButtonType.NewLvl);
+  ExitBtn.Init(298, 178, IconButtonType.ExitApp);
 
-  FileModal    := TModal.Create('', [], _file_w_x, _file_w_y, ModalType.FileWindow);
-  NotSaveModal := TModal.Create(_not_sav_w_t, [_not_sav_w_txt1, _not_sav_w_txt2], _window_x, _window_y, ModalType.YesNoWindow);
+  FileModal.Init('', [], _file_w_x, _file_w_y, ModalType.FileWindow);
+  NotSaveModal.Init(_not_sav_w_t, [_not_sav_w_txt1, _not_sav_w_txt2], _window_x, _window_y, ModalType.YesNoWindow);
 
   Grid_OBJ.SetTypeCell(0, 0, CellType.Gold);
   Grid_OBJ.SetTypeCell(0, 1, CellType.Gem);
@@ -155,9 +236,6 @@ begin
   SaveBtn.Draw;
   NewBtn.Draw;
   ExitBtn.Draw;
-
-  prev_mouse_lb := 0;
-  prev_mouse_rb := 0;
 
   Map_NAME.Draw;
 
@@ -186,17 +264,13 @@ begin
 
                 NotSaveModal.Show;
                 if NotSaveModal.WaitResult(MyMouse.X, MyMouse.Y).B then // YES - save before exit
-                  begin
-                    if length(Map_NAME.GetName) <= 4 then Map_NAME.EditName;
-                    Map_OBJ.SaveMap(Map_NAME.GetName); 
-                  end;
-                
+                    DontForgetSetNameBeforeSave;
+            
                 ExitEditor;
-
               end
             else if SaveBtn.IsClick(MyMouse.X, MyMouse.Y) then    // Click Save
               begin
-                Map_OBJ.SaveMap(Map_NAME.GetName);
+                DontForgetSetNameBeforeSave;
                 _map_change := false;
               end
             else if LoadBtn.IsClick(MyMouse.X, MyMouse.Y) then    // Click Load
@@ -265,7 +339,7 @@ begin
     
     prev_mouse_lb := MyMouse.Btn;
     prev_mouse_rb := MyMouse.Btn;
-    
+    ColorMagic;
   until (6 > 7);
 
 end.

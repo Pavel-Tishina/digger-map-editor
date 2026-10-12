@@ -9,7 +9,7 @@ uses
   draw, _types, _ag;
 
 type
-  IconButton = class(TGUI)
+  IconButton = object(TGUI)
     const
       _s = 19;
 
@@ -17,7 +17,7 @@ type
       _t : IconButtonType;
       _img : ArchiveGraphicFile;
 
-    constructor Init(x, y: Word; t: IconButtonType);
+    procedure Init(x, y: Word; t: IconButtonType);
     
     procedure Draw;
   end;
@@ -25,7 +25,7 @@ type
 
 implementation
 
-  constructor IconButton.Init(x, y: Word; t: IconButtonType);
+  procedure IconButton.Init(x, y: Word; t: IconButtonType);
     begin
       _x := x;
       _y := y;
@@ -34,7 +34,7 @@ implementation
       _t := t;
 
       if t <> IconButtonType.Cross then
-        _img := ArchiveGraphicFile.Init(IconButtonTypeFileName(t));
+        _img.Init(IconButtonTypeFileName(t));
     end;
   
   // // // // // // // //
