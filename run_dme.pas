@@ -18,8 +18,11 @@ const
   _not_sav_w_txt2 = 'before the exit?';
 
 var
-  prev_mouse_lb, prev_mouse_rb, _slvl: Byte;
-  _gold_n: ShortInt;
+  prev_mouse_lb : Byte = 0;
+  prev_mouse_rb : Byte = 0;
+  _slvl         : Byte = 0;
+  _gold_n       : ShortInt = 0;
+
   Grid_LVL, Grid_OBJ, Grid_L, Grid_R : LevelGrid;
   Map_OBJ : LevelMap;
   LoadBtn, SaveBtn, NewBtn, ExitBtn : IconButton;
@@ -29,25 +32,24 @@ var
   _click_cell_type : CellType;
   _click_lvl_cell : LevelCell;
   _close_window_result : TWindowResult;
-  _map_change, _remind_draw : Boolean;
-  _dialog_shown : Boolean;   // the click was handled by a modal window
+  _map_change   : Boolean = false;
+  _remind_draw  : Boolean = false;
+  _dialog_shown : Boolean = false;   // the click was handled by a modal window
 
   // initialized variables: a value in the data is 1-2 bytes, an assignment in the code is 5-6
   _bg_c_changer : Byte = 0;
-  _col_inx : Integer = 0;
-  _col_inx2 : Integer = 0;
-  _r9 : Byte = 0;   _g9 : Byte = 0;   _b9 : Byte = 0;
-  _r11 : Byte = 63; _g11 : Byte = 63; _b11 : Byte = 63;
+  _col_inx  : Word  = 0;
+  _col_inx2 : Word = 0;
+  _r9  : Byte = 0;   _g9  : Byte = 0;   _b9  : Byte = 0;
+  _r11 : Byte = 63;  _g11 : Byte = 63;  _b11 : Byte = 63;
 
-  _r2 : Byte = 5;   _g2 : Byte = 5;   _b2 : Byte = 5;
-  _r3 : Byte = 10;  _g3 : Byte = 10;  _b3 : Byte = 10;
-  _r13 : Byte = 15; _g13 : Byte = 15; _b13 : Byte = 15;
-  _r14 : Byte = 20; _g14 : Byte = 20; _b14 : Byte = 20;
+  _r2  : Byte = 5;   _g2  : Byte = 5;   _b2  : Byte = 5;
+  _r3  : Byte = 10;  _g3  : Byte = 10;  _b3  : Byte = 10;
+  _r13 : Byte = 15;  _g13 : Byte = 15;  _b13 : Byte = 15;
+  _r14 : Byte = 20;  _g14 : Byte = 20;  _b14 : Byte = 20;
 
-  _ic2_3 : ShortInt = -1;
-  _ic9 : ShortInt = -1;
-  _ic11 : ShortInt = 1;
-
+  _ic       : ShortInt = -1;
+  _ic_save  : ShortInt = -1;
 
 // can a map cell change old_type -> new_type? counts the gold, at most 8
 function ChangeCell(old_type, new_type : CellType): Boolean;
@@ -153,22 +155,14 @@ procedure BackgroundColorMagic;
     if (_col_inx2 < 1000) then exit;
     
     _col_inx2 := 0;
-    if (((_r2 = 5) AND (_g2 = 5) AND (_b2 = 5)) OR ((_r2 = 10) AND (_g2 = 10) AND (_b2 = 10))) then _ic2_3 := - _ic2_3;
+    if (((_r2 = 5) AND (_g2 = 5) AND (_b2 = 5)) OR ((_r2 = 10) AND (_g2 = 10) AND (_b2 = 10))) then _ic := - _ic;
 
       inc(_bg_c_changer);
       case _bg_c_changer of
-        1 : inc(_r2, _ic2_3); 
-        2 : inc(_g2, _ic2_3);
-        3 : inc(_b2, _ic2_3);
-        4 : dec(_r3, _ic2_3);
-        5 : dec(_g3, _ic2_3);
-        6 : dec(_b3, _ic2_3);
-        7 : inc(_r13, _ic2_3);
-        8 : inc(_g13, _ic2_3);
-        9 : inc(_b13, _ic2_3);
-        10 : dec(_r14, _ic2_3);
-        11 : dec(_g14, _ic2_3);
-        12 : dec(_b14, _ic2_3);
+        1  : inc(_r2, _ic);    2 : inc(_g2, _ic);    3 : inc(_b2, _ic);    // Color 2
+        4  : dec(_r3, _ic);    5 : dec(_g3, _ic);    6 : dec(_b3, _ic);    // Color 3
+        7  : inc(_r13, _ic);   8 : inc(_g13, _ic);   9 : inc(_b13, _ic);   // Color 13
+        10 : dec(_r14, _ic);  11 : dec(_g14, _ic);  12 : dec(_b14, _ic);   // Color 14
         else _bg_c_changer := 0;
       end;
 
@@ -180,7 +174,6 @@ procedure BackgroundColorMagic;
         SetPalette(13, _r13, _g13, _b13)
       else if btwn(_bg_c_changer, 10, 12) then
         SetPalette(14, _r14, _g14, _b14);
-
   end;
 
 procedure ColorMagic;
@@ -191,31 +184,16 @@ procedure ColorMagic;
     if (NOT _map_change) OR (_col_inx < 3000) then exit;
 
     _col_inx := 0;
-    if ((_r9 = 0) AND (_g9 = 0) AND (_b9 = 0))
-        OR ((_r9 = 63) AND (_g9 = 63) AND (_b9 = 63))
-     then
-      begin
-        _ic9 := -_ic9;
-        _ic11 := -_ic11;
-      end;
+    if ((_r9 = 0) OR (_r9 = 63)) then _ic_save := -_ic_save;
       
-      inc(_r9, _ic9);
-      inc(_r11, _ic11);
-      inc(_g9, _ic9);
-      inc(_g11, _ic11);
-      inc(_b9, _ic9);
-      inc(_b11, _ic11);
+      inc(_r9,  _ic_save);  inc(_g9,  _ic_save);  inc(_b9,  _ic_save);  // Color 9
+      dec(_r11, _ic_save);  dec(_g11, _ic_save);  dec(_b11, _ic_save);  // Color 11
 
     SetPalette(9, _r9, _g9, _b9);
     SetPalette(5, _r11, _g11, _b11);
   end;
 
 begin
-  _gold_n := 0;
-  _slvl := 0;
-  _map_change := false;
-  _remind_draw := false;
-
   MyMouse.X := 0;
   MyMouse.Y := 0;
   MyMouse.Btn := 0;
@@ -258,9 +236,6 @@ begin
   SaveBtn.Draw;
   NewBtn.Draw;
   ExitBtn.Draw;
-
-  prev_mouse_lb := 0;
-  prev_mouse_rb := 0;
 
   Map_NAME.Draw;
 

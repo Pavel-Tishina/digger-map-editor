@@ -26,8 +26,6 @@ type
 
     procedure Draw;
     procedure DrawTonnels;
-    procedure AddTonnel(td : TonnelDirection);
-    procedure DelTonnel(td : TonnelDirection);
 
     procedure AddOrDelTonnel(td : TonnelDirection; isItAdd: Boolean);
     
@@ -45,8 +43,8 @@ implementation
       // tonnel rectangle in the cell: x1, y1, x2, y2,
       // inside the grid lines (0, _r): from 1 to _r - 1, the lines are shared with the neighbour cells
       TONNEL_RECT: array[TonnelDirection.Nord..TonnelDirection.East, 0..3] of Byte = (
-        (LevelCell._tm, 1, LevelCell._tm + LevelCell._tr, LevelCell._tr),                         // Nord
-        (1, LevelCell._tm, LevelCell._tr, LevelCell._tm + LevelCell._tr),                         // West
+        (LevelCell._tm, 1, LevelCell._tm + LevelCell._tr, LevelCell._tr),                               // Nord
+        (1, LevelCell._tm, LevelCell._tr, LevelCell._tm + LevelCell._tr),                               // West
         (LevelCell._tm, LevelCell._r - LevelCell._tr, LevelCell._tm + LevelCell._tr, LevelCell._r - 1), // South
         (LevelCell._r - LevelCell._tr, LevelCell._tm, LevelCell._r - 1, LevelCell._tm + LevelCell._tr)  // East
       );
@@ -76,8 +74,13 @@ implementation
         // table, not case: one FilledRectangle call instead of four
         for _tj := TonnelDirection.Nord to TonnelDirection.East do
           if _tj in _tonnel then
-            FilledRectangle(_x + TONNEL_RECT[_tj, 0], _y + TONNEL_RECT[_tj, 1],
-                            _x + TONNEL_RECT[_tj, 2], _y + TONNEL_RECT[_tj, 3], 0, 0);
+            FilledRectangle(
+              _x + TONNEL_RECT[_tj, 0],
+              _y + TONNEL_RECT[_tj, 1],
+              _x + TONNEL_RECT[_tj, 2], 
+              _y + TONNEL_RECT[_tj, 3], 
+              0, 0
+            );
       end;
 
     procedure LevelCell.Draw;
@@ -111,24 +114,14 @@ implementation
         Y := _yi;
       end;
 
-    procedure LevelCell.AddTonnel(td : TonnelDirection);
-      begin
-        if td <> TonnelDirection.None then
-          Include(_tonnel, td);
-      end;
-
-    procedure LevelCell.DelTonnel(td : TonnelDirection);
-      begin
-        if td <> TonnelDirection.None then
-          Exclude(_tonnel, td);
-      end;
-
     procedure LevelCell.AddOrDelTonnel(td : TonnelDirection; isItAdd: Boolean);
       begin
+        if td <> TonnelDirection.None then exit;
+        
         if isItAdd then
-          AddTonnel(td)
+          Include(_tonnel, td)
         else
-          DelTonnel(td);
+          Exclude(_tonnel, td);
       end;
     
 
