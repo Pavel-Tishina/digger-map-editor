@@ -41,11 +41,24 @@ type
     function CellXYMatch(x, y: Byte): Boolean; inline;
 
     function TonnelsOf(x, y: Byte): TonnelSet;
-    procedure UpdateTonnels(x, y: Byte);
+    procedure UpdateTonnels(x, y: Byte; redraw: Boolean);
 
   end;
 
 implementation
+
+  const
+    // neighbour cell offset by the direction
+    TONNEL_DX: array[TonnelDirection.Nord..TonnelDirection.East] of ShortInt = (0, -1, 0, 1);
+    TONNEL_DY: array[TonnelDirection.Nord..TonnelDirection.East] of ShortInt = (-1, 0, 1, 0);
+    // directions to the same type neighbour that is parallel, not joined
+    TONNEL_PARALLEL: array[CellType] of TonnelSet = (
+      [], [], [], [],                                   // Field, Gold, Gem, Hole
+      [TonnelDirection.Nord, TonnelDirection.South],    // TonnelH
+      [TonnelDirection.West, TonnelDirection.East],     // TonnelV
+      []);                                              // Error
+
+    /// /// /// /// /// ///
 
   procedure LevelGrid.Init(xpos, ypos: Word; xc, yc: Byte; tonnels: Boolean = false);
     var
@@ -128,6 +141,7 @@ implementation
   procedure LevelGrid.SetTypeCell(x, y: Byte; t: CellType);
     var
       _t : CellType;
+      _td : TonnelDirection;
 
     begin
       if CellXYMatch(x, y) then
@@ -140,10 +154,8 @@ implementation
 
           // the cell itself is drawn by the caller (DrawCell)
           _cells[x, y]._tonnel := TonnelsOf(x, y);
-          UpdateTonnels(x, Byte(y - 1));
-          UpdateTonnels(Byte(x - 1), y);
-          UpdateTonnels(x, Byte(y + 1));
-          UpdateTonnels(Byte(x + 1), y);
+          for _td := TonnelDirection.Nord to TonnelDirection.East do
+            UpdateTonnels(Byte(x + TONNEL_DX[_td]), Byte(y + TONNEL_DY[_td]), false);
         end;
     end;
 
@@ -214,53 +226,36 @@ implementation
         // tonnels only after all the types: they depend on the neighbours
         for y := 0 to 9 do
           for x := 0 to 14 do
-            if changed[x, y] then
-              begin
-                _cells[x, y]._tonnel := TonnelsOf(x, y);
-                _cells[x, y].Draw;
-              end
-            else
-              UpdateTonnels(x, y);
+            UpdateTonnels(x, y, changed[x, y]);
       end;
 
     /// /// /// /// /// ///
 
-    // the cell t is joined with the neighbour nt in the direction td,
-    // except parallel tonnels side by side: TonnelV | TonnelV, TonnelH over TonnelH
-    function CanJoin(t, nt: CellType; td: TonnelDirection): Boolean;
-      begin
-        Result := IsItTonnelCell(nt);
-        if (NOT Result) OR (t <> nt) then exit;
-
-        if t = CellType.TonnelV then
-          Result := NOT (td in [TonnelDirection.West, TonnelDirection.East])
-        else if t = CellType.TonnelH then
-          Result := NOT (td in [TonnelDirection.Nord, TonnelDirection.South]);
-      end;
-
-    /// /// /// /// /// ///
-
-    // directions to the joined neighbouring tonnel cells, out of the grid GetTypeCell is Error
+    // directions to the joined neighbouring tonnel cells, out of the grid GetTypeCell is Error.
+    // Parallel tonnels side by side are not joined: TonnelV | TonnelV, TonnelH over TonnelH
     function LevelGrid.TonnelsOf(x, y: Byte): TonnelSet;
       var
-        t: CellType;
+        t, nt: CellType;
+        td: TonnelDirection;
 
       begin
         Result := [];
         t := GetTypeCell(x, y);
         if NOT (_tonnels AND IsItTonnelCell(t)) then exit;
 
-        // Byte(..): 0 - 1 -> 255, it is out of the grid
-        if CanJoin(t, GetTypeCell(x, Byte(y - 1)), TonnelDirection.Nord) then Include(Result, TonnelDirection.Nord);
-        if CanJoin(t, GetTypeCell(Byte(x - 1), y), TonnelDirection.West) then Include(Result, TonnelDirection.West);
-        if CanJoin(t, GetTypeCell(x, Byte(y + 1)), TonnelDirection.South) then Include(Result, TonnelDirection.South);
-        if CanJoin(t, GetTypeCell(Byte(x + 1), y), TonnelDirection.East) then Include(Result, TonnelDirection.East);
+        for td := TonnelDirection.Nord to TonnelDirection.East do
+          begin
+            // Byte(..): 0 - 1 -> 255, it is out of the grid
+            nt := GetTypeCell(Byte(x + TONNEL_DX[td]), Byte(y + TONNEL_DY[td]));
+            if IsItTonnelCell(nt) AND NOT ((t = nt) AND (td in TONNEL_PARALLEL[t])) then
+              Include(Result, td);
+          end;
       end;
 
     /// /// /// /// /// ///
 
-    // recalculates the cell tonnels, redraws the cell if they are changed
-    procedure LevelGrid.UpdateTonnels(x, y: Byte);
+    // recalculates the cell tonnels, redraws the cell if they are changed or redraw is set
+    procedure LevelGrid.UpdateTonnels(x, y: Byte; redraw: Boolean);
       var
         ts: TonnelSet;
 
@@ -268,7 +263,7 @@ implementation
         if NOT CellXYMatch(x, y) then exit;
 
         ts := TonnelsOf(x, y);
-        if ts <> _cells[x, y]._tonnel then
+        if redraw OR (ts <> _cells[x, y]._tonnel) then
           begin
             _cells[x, y]._tonnel := ts;
             _cells[x, y].Draw;

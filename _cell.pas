@@ -41,6 +41,16 @@ type
   function IsItTonnelCell(t: CellType): Boolean;
 
 implementation
+    const
+      // tonnel rectangle in the cell: x1, y1, x2, y2,
+      // inside the grid lines (0, _r): from 1 to _r - 1, the lines are shared with the neighbour cells
+      TONNEL_RECT: array[TonnelDirection.Nord..TonnelDirection.East, 0..3] of Byte = (
+        (LevelCell._tm, 1, LevelCell._tm + LevelCell._tr, LevelCell._tr),                         // Nord
+        (1, LevelCell._tm, LevelCell._tr, LevelCell._tm + LevelCell._tr),                         // West
+        (LevelCell._tm, LevelCell._r - LevelCell._tr, LevelCell._tm + LevelCell._tr, LevelCell._r - 1), // South
+        (LevelCell._r - LevelCell._tr, LevelCell._tm, LevelCell._r - 1, LevelCell._tm + LevelCell._tr)  // East
+      );
+
     function IsItTonnelCell(t: CellType): Boolean;
       begin
         Result := (t = CellType.Hole) OR (t = CellType.TonnelH) OR (t = CellType.TonnelV);
@@ -62,17 +72,12 @@ implementation
         _tj : TonnelDirection;
       
       begin
-        if ((NOT IsItTonnelCell(_t)) OR (_tonnel = [])) then exit;
-
-        // inside the grid lines (_x, _x + _r): from +1 to _r - 1,
-        // the lines are shared with the neighbour cells
-        for _tj in _tonnel do
-          case _tj of
-            TonnelDirection.Nord : FilledRectangle(_x + _tm, _y + 1, _x + _tm + _tr, _y + _tr, 0, 0);
-            TonnelDirection.West : FilledRectangle(_x + 1, _y + _tm, _x + _tr, _y + _tm + _tr, 0, 0);
-            TonnelDirection.East : FilledRectangle(_x + _r - _tr, _y + _tm, _x + _r - 1, _y + _tm + _tr, 0, 0);
-            TonnelDirection.South : FilledRectangle(_x + _tm, _y + _r - _tr, _x + _tm + _tr, _y + _r - 1, 0, 0);
-          end;
+        // _tonnel is [] for not tonnel cells: LevelGrid keeps it so
+        // table, not case: one FilledRectangle call instead of four
+        for _tj := TonnelDirection.Nord to TonnelDirection.East do
+          if _tj in _tonnel then
+            FilledRectangle(_x + TONNEL_RECT[_tj, 0], _y + TONNEL_RECT[_tj, 1],
+                            _x + TONNEL_RECT[_tj, 2], _y + TONNEL_RECT[_tj, 3], 0, 0);
       end;
 
     procedure LevelCell.Draw;

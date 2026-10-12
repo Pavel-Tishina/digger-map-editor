@@ -32,17 +32,21 @@ var
   _map_change, _remind_draw : Boolean;
   _dialog_shown : Boolean;   // the click was handled by a modal window
 
+  // initialized variables: a value in the data is 1-2 bytes, an assignment in the code is 5-6
   _bg_c_changer : Byte = 0;
-  _col_inx, _col_inx2: Integer;
-  _r9, _g9, _b9 : Byte;
-  _r11, _g11, _b11 : Byte;
-  
-  _r2, _g2, _b2 : Byte;
-  _r3, _g3, _b3 : Byte;
-  _r13, _g13, _b13 : Byte;
-  _r14, _g14, _b14 : Byte;
-  
-  _ic2_3, _ic9, _ic11 : ShortInt;
+  _col_inx : Integer = 0;
+  _col_inx2 : Integer = 0;
+  _r9 : Byte = 0;   _g9 : Byte = 0;   _b9 : Byte = 0;
+  _r11 : Byte = 63; _g11 : Byte = 63; _b11 : Byte = 63;
+
+  _r2 : Byte = 5;   _g2 : Byte = 5;   _b2 : Byte = 5;
+  _r3 : Byte = 10;  _g3 : Byte = 10;  _b3 : Byte = 10;
+  _r13 : Byte = 15; _g13 : Byte = 15; _b13 : Byte = 15;
+  _r14 : Byte = 20; _g14 : Byte = 20; _b14 : Byte = 20;
+
+  _ic2_3 : ShortInt = -1;
+  _ic9 : ShortInt = -1;
+  _ic11 : ShortInt = 1;
 
 
 // can a map cell change old_type -> new_type? counts the gold, at most 8
@@ -106,23 +110,26 @@ procedure ExitEditor;
 procedure DrawBackground; pascal; external name 'DME_DRAWBACKGROUND';
 
 procedure DontForgetSaveMap;
+  const
+    // corner lines of the Save button frame: x1, y1, x2, y2
+    SAVE_CORNERS: array[0..7, 0..3] of Byte = (
+      (137, 2, 141, 2),   (137, 21, 141, 21),
+      (152, 2, 156, 2),   (152, 21, 156, 21),
+      (137, 2, 137, 6),   (137, 17, 137, 21),
+      (156, 2, 156, 6),   (156, 17, 156, 21));
+
+  var
+    _i: Byte;
+
   begin
     if _remind_draw = _map_change then exit;
     
     Square(137, 2, 19, specialize IfElse<Byte>(_map_change, 5, 7));
     if _map_change then
       begin
-        Line(137, 2, 141, 2, 9);
-        Line(137, 21, 141, 21, 9);
-
-        Line(152, 2, 156, 2, 9);
-        Line(152, 21, 156, 21, 9);
-
-        Line(137, 2, 137, 6, 9);
-        Line(137, 17, 137, 21, 9);
-
-        Line(156, 2, 156, 6, 9);
-        Line(156, 17, 156, 21, 9);
+        // table, not 8 calls of Line with 5 arguments each
+        for _i := 0 to High(SAVE_CORNERS) do
+          Line(SAVE_CORNERS[_i, 0], SAVE_CORNERS[_i, 1], SAVE_CORNERS[_i, 2], SAVE_CORNERS[_i, 3], 9);
 
         PutPixelOffset(LineOffset[2] + 146, 9);
         PutPixelOffset(LineOffset[21] + 146, 9);
@@ -204,38 +211,6 @@ procedure ColorMagic;
   end;
 
 begin
-  // _bg_c_changer := true;
-  
-  _ic9 := -1;
-  _ic11 := 1;
-  _ic2_3 := -1;
-  
-  _r2 := 5;
-  _g2 := 5;
-  _b2 := 5;
-
-  _r3 := 10;
-  _g3 := 10;
-  _b3 := 10;
-
-  _r13 := 15;
-  _g13 := 15;
-  _b13 := 15;
-
-  _r14 := 20;
-  _g14 := 20;
-  _b14 := 20;
-
-  _r9 := 0;
-  _g9 := 0;
-  _b9 := 0;
-  
-  _r11 := 63;
-  _g11 := 63;
-  _b11 := 63;
-  _col_inx := 0;
-  _col_inx2 := 0;
-
   _gold_n := 0;
   _slvl := 0;
   _map_change := false;

@@ -61,6 +61,28 @@ type
     
 implementation
 
+  type
+    TMapPath = String[40];
+
+  // _dir + f + #0 by Move: the + of strings links fpc_shortstr_concat(_multi), ~700 bytes
+  procedure MapPath(const f: String; out p: TMapPath);
+    const
+      _dl = Length(LevelMap._dir);
+
+    var
+      _l: Byte;
+
+    begin
+      _l := Length(f);
+      if _l > High(TMapPath) - _dl - 1 then
+        _l := High(TMapPath) - _dl - 1;
+
+      p := LevelMap._dir;
+      Move(f[1], p[_dl + 1], _l);
+      p[_dl + _l + 1] := #0;
+      p[0] := Chr(_dl + _l + 1);
+    end;
+
   function CheckXYLvl(x, y: Byte): Boolean;
     begin
       Result := btwn(x, 0, 14) AND btwn(y, 0, 9);
@@ -222,9 +244,9 @@ implementation
         _lvl_i, _xl, _yl: Byte;
         _content: array[0..1201] of Char;
         _h, _i, _l, _start : Word;
-        _path : String[40];
+        _path : TMapPath;
       begin
-        _path := _dir + f + #0;
+        MapPath(f, _path);
         _h := OpenFileRead(@_path[1]);
         if _h = $FFFF then exit;
 
@@ -273,7 +295,7 @@ implementation
         _lvl_i, _xl, _yl: Byte;
         _content: array[0..1201] of Char;
         _h, _i : Word;
-        _path : String[40];
+        _path : TMapPath;
       begin
         
         _content[0] := Chr(1);
@@ -287,7 +309,7 @@ implementation
                 inc(_i);
               end; 
 
-        _path := _dir + f + #0;
+        MapPath(f, _path);
         _h := CreateFile(@_path[1]);
         if _h = $FFFF then exit;
 
