@@ -1,6 +1,9 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
+// File-List scroller object
+// Used in FileList object.
+// It contains up- and down-button and not clicable scroller line
 unit _fscl;
 
 interface

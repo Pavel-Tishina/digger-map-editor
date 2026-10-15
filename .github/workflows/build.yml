@@ -14,6 +14,7 @@ env:
   FPC_VER: 3.2.2
   FPC_DIR: C:\FPC\3.2.2
   FPC_URL: https://downloads.sourceforge.net/project/freepascal/Win32/3.2.2
+  UPX_VER: 5.2.1
 
 jobs:
   build:
@@ -49,6 +50,16 @@ jobs:
             choco install nasm -y --no-progress
             "NASM=C:\Program Files\NASM\nasm.exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           }
+
+      - name: Install UPX
+        shell: pwsh
+        run: |
+          $dir = "$env:RUNNER_TEMP\upx"
+          curl.exe -fL --retry 3 -o upx.zip "https://github.com/upx/upx/releases/download/v$env:UPX_VER/upx-$env:UPX_VER-win64.zip"
+          if ($LASTEXITCODE -ne 0) { throw "download of UPX failed" }
+          Expand-Archive upx.zip $dir
+          Remove-Item upx.zip
+          "UPXEXE=$dir\upx-$env:UPX_VER-win64\upx.exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Build
         shell: cmd

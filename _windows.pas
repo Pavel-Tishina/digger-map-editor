@@ -1,6 +1,9 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
+// Module for Modal Windows
+// - Load file window
+// - Save before exit window
 unit _windows;
 
 interface
@@ -11,29 +14,30 @@ uses
 type
   TModal = object(TGUI)
     const
-      _title_tm = 5;   // title top marging
-      _title_lm = 5;   // title left-right marging
-      _txt_tm   = 20;  // text top marging
-      _txt_lm   = 5;   // text l-r marging
-      _txt_btwm = 10;  // text between lines marging
-      _btns_bm  = 5;
+      _title_tm = 5;        // title top marging
+      _title_lm = 5;        // title left-right marging
+      _txt_tm   = 20;       // text top marging
+      _txt_lm   = 5;        // text l-r marging
+      _txt_btwm = 10;       // text between lines marging
+      _btns_bm  = 5;        // space between buttons and bottom
 
-      _file_marging = 5;
-      _file_btn_m   = 24;
-      _file_list_xm = 165;
-      _file_list_ym = 165;
+      _file_marging = 5;    // file-list and system-buttosn marging
+      _file_btn_m   = 24;   // space between buttons and file-list
+      _file_list_xm = 165;  // file-list x-size
+      _file_list_ym = 165;  // file-list y-size
 
     var
       _buttons: array[0..1] of TModalButton;   // YesNoWindow: YES, NO
       _sys_btns: array[0..1] of IconButton;    // FileWindow: close, load
       _files_list: TFileListObj;
-      _wtype: ModalType;
+      _wtype: ModalType;                       // FileWindow, YesNoWindow or SimpleWindow (with only one button)
       _bkg_area: TBackGround;                  // IsNull = the window is hidden
 
-      _title: String[40];             // not String: 256 bytes each
-      _text: array[0..1] of String[40];
-      _n_text: Byte;
-      _close_after : Boolean;
+      _title: String[40];                     // not String: 256 bytes each
+      _text: array[0..1] of String[40];       // hard optimized
+      _n_text: Byte;                          // maybe I don't need it? just a length(_text)?
+      _close_after : Boolean;                 // this flag used for FileWindow, 
+                                              //    true - if one of button was clicked, false - if scroll or file choose
 
     // the size is calculated from the title and text (FileWindow: fixed size)
     procedure Init(

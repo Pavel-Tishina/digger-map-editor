@@ -1,6 +1,7 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
+// Icons loader module
 unit _icons;
 
 interface

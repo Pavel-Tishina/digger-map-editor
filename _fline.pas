@@ -1,6 +1,8 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
+// File-line object
+// Used in FileList and as dedicated object for LevelMap file name
 unit _fline;
 
 interface
@@ -9,7 +11,7 @@ uses
   io, draw, _types, _util, _font;
 
 const
-  _letters        = '-_+![]()';
+  _letters = '-_+![]()';
 
 type
   TFileLine = object(TGUI)

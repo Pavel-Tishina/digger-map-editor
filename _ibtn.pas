@@ -1,6 +1,7 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
+// Icons Button object
 unit _ibtn;
 
 interface

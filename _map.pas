@@ -1,7 +1,15 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 {$INLINE ON}
+{$MODESWITCH ADVANCEDRECORDS}   // record with methods: no VMT, the same code as an object
 
+// Map object
+// It used for:
+// - show miniatures of level
+// - clickable level swiching
+// - store LevelMap data
+// - load LevelMap data from file
+// - save LevelMap data to file
 unit _map;
 
 interface
@@ -12,7 +20,7 @@ uses
   /// Level ///
 
 type
-  Level = object
+  Level = record
     _lvl: array[0..14, 0..9] of CellType;
 
     procedure Init;

@@ -1,7 +1,9 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 {$INLINE ON}
+{$MODESWITCH ADVANCEDRECORDS}
 
+// Cell object in Level Grid
 unit _cell; 
 
 interface
@@ -10,7 +12,7 @@ uses
     draw, _types, _icons;
 
 type
-  LevelCell = object
+  LevelCell = record
     const
       _r = 17;
       _tm = 5;
@@ -116,7 +118,7 @@ implementation
 
     procedure LevelCell.AddOrDelTonnel(td : TonnelDirection; isItAdd: Boolean);
       begin
-        if td <> TonnelDirection.None then exit;
+        if td = TonnelDirection.None then exit;
         
         if isItAdd then
           Include(_tonnel, td)

@@ -1,6 +1,7 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
+// Simple Texted-button object
 unit _mbtn;
 
 interface
@@ -10,7 +11,7 @@ uses
 
 type
   TModalButton = object(TGUI)
-    _txt: String[16];   // not ShortString: 256 bytes
+    _txt: String[16];
 
     procedure Init(x, y: Word; minx: Byte; const txt: ShortString);
     procedure Draw;
