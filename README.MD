@@ -1,4 +1,4 @@
-﻿# digger-map-editor
+# digger-map-editor
 
 Map Editor for <a href="https://digger.org/download.html">Digger Remastered</a> (re-creation of old game Digger by Windmill Software).
 
@@ -12,6 +12,8 @@ Map Editor for <a href="https://digger.org/download.html">Digger Remastered</a> 
 - [Free Pascal 3.2.2](https://www.freepascal.org/download.html) (i386-win32) with the **i8086-msdos** cross compiler
   (`ppcross8086.exe`, installed by the `fpc-3.2.2.i386-win32.cross.i8086-msdos` package)
 - NASM (`nasm.exe`) in the FPC `bin` directory
+- [UPX](https://github.com/upx/upx/releases) (`upx.exe`) in the FPC `bin` directory or in `PATH`
+  (or set the `UPXEXE` environment variable to its path)
 
 By default the build script expects the toolchain in `C:\FPC\3.2.2\bin\i386-win32`.
 If FPC is installed elsewhere, set the `FPCBIN` environment variable:
@@ -33,7 +35,7 @@ The script:
 1. assembles every `asm\*.asm` file with NASM into an OMF object `asm\*.obj`
    (the objects are linked into the units via `{$L asm/*.obj}`);
 2. compiles and links `run_dme.pas` into `run_dme.exe`
-   (target `i8086-msdos`, small memory model, options `-Pi8086 -Tmsdos -WmSmall -B`).
+   (target `i8086-msdos`, small memory model, options `-Pi8086 -Tmsdos -WmSmall -B`);. compresses `run_dme.exe` with UPX (`--8086 --ultra-brute`, the unpacker runs on 8086) and tests it.
 
 All units are always rebuilt (`-B`), because FPC does not track changes of the `.obj` files.
 

@@ -1,7 +1,10 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 {$INLINE ON}
+{$MODESWITCH ADVANCEDRECORDS}
 
+// Archived Graphic module 
+// It implements a file-reader and decoder for cg2-file images.  
 unit _ag;
 
 interface
@@ -10,7 +13,7 @@ uses
   io, draw, _types;
 
 type
-  ArchiveGraphicFile = object
+  ArchiveGraphicFile = record
   public
     bg_color: Byte;
     pixcount, xm: Word;
@@ -30,7 +33,7 @@ type
 implementation
 
     const
-      BUF_SIZE = 2048;    // the largest used file, ABC_V2.CG2, is 1790 bytes
+      BUF_SIZE = 2048;    // the largest used file, ABC_V2.CG2, is 1790 bytes... But it should be bigger in needed
 
     var
       // one read buffer for all files: a file is decoded right after reading

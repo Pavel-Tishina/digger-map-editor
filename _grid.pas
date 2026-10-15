@@ -2,12 +2,14 @@
 {$MODE OBJFPC}
 {$INLINE ON}
 
+// Level Grid object.
+// Area for placed object of level 
 unit _grid;
 
 interface
 
 uses
-  _cell, _types, _map;
+  _cell, _types, _map, _util;
 
 type
   LevelGrid = object(TGUI)
@@ -16,7 +18,6 @@ type
 
     var
       _xn, _yn: Byte;
-      // static: the largest grid is the 15 x 10 map
       _cells: array[0..14, 0..9] of LevelCell;
       // join neighbouring tonnel cells: only the level grid, not the object column / tools
       _tonnels: Boolean;
@@ -144,19 +145,18 @@ implementation
       _td : TonnelDirection;
 
     begin
-      if CellXYMatch(x, y) then
-        begin
-          _t := _cells[x, y].GetType;
-          _cells[x, y].SetType(t);
+      if NOT CellXYMatch(x, y) then exit;
+      
+      _t := _cells[x, y].GetType;
+      _cells[x, y].SetType(t);
 
-          // TonnelH <-> TonnelV changes the joins too: parallel tonnels are not joined
-          if (NOT _tonnels) OR (_t = t) then exit;
+      // TonnelH <-> TonnelV changes the joins too: parallel tonnels are not joined
+      if (NOT _tonnels) OR (_t = t) then exit;
 
-          // the cell itself is drawn by the caller (DrawCell)
-          _cells[x, y]._tonnel := TonnelsOf(x, y);
-          for _td := TonnelDirection.Nord to TonnelDirection.East do
-            UpdateTonnels(Byte(x + TONNEL_DX[_td]), Byte(y + TONNEL_DY[_td]), false);
-        end;
+      // the cell itself is drawn by the caller (DrawCell)
+      _cells[x, y]._tonnel := TonnelsOf(x, y);
+      for _td := TonnelDirection.Nord to TonnelDirection.East do
+        UpdateTonnels(Byte(x + TONNEL_DX[_td]), Byte(y + TONNEL_DY[_td]), false);
     end;
 
     /// /// /// /// /// ///
@@ -177,16 +177,10 @@ implementation
       _c : Word;
 
     begin
-      if mouse_coord <= start_coord then
-        exit(0);
+      if mouse_coord <= start_coord then exit(0);
 
-      // Word(..): Word - Word is LongInt in FPC, its div calls fpc_div_longint
       _c := Word(mouse_coord - start_coord) div _grid_size;
-
-      if _c > lim then
-        Result := lim
-      else
-        Result := _c;
+      Result := specialize IfElse<Byte>(_c > lim, lim, _c);
     end;
 
     /// /// /// /// /// ///
@@ -231,7 +225,6 @@ implementation
 
     /// /// /// /// /// ///
 
-    // directions to the joined neighbouring tonnel cells, out of the grid GetTypeCell is Error.
     // Parallel tonnels side by side are not joined: TonnelV | TonnelV, TonnelH over TonnelH
     function LevelGrid.TonnelsOf(x, y: Byte): TonnelSet;
       var

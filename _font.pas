@@ -1,6 +1,7 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
+// Module that load fonts into the memory and draw it
 unit _font;
 
 interface
@@ -18,9 +19,9 @@ implementation
     _xn = 22;   // count letters in line
 
   var
-    _sidx: Byte;
-    _index   : array[Char] of Byte;      // char -> symbol number, 0 = no glyph
-    _font_file : ArchiveGraphicFile;     // letters are drawn straight from its pixels
+    _sidx      : Byte;
+    _index     : array[Char] of Byte;      // char -> symbol number, 0 = no glyph
+    _font_file : ArchiveGraphicFile;       // letters are drawn straight from its pixels
 
   procedure DrawLetter(x, y: Word; c: Char);
     var

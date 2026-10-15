@@ -43,10 +43,8 @@ var
   _r9  : Byte = 0;   _g9  : Byte = 0;   _b9  : Byte = 0;
   _r11 : Byte = 63;  _g11 : Byte = 63;  _b11 : Byte = 63;
 
-  _r2  : Byte = 5;   _g2  : Byte = 5;   _b2  : Byte = 5;
-  _r3  : Byte = 10;  _g3  : Byte = 10;  _b3  : Byte = 10;
-  _r13 : Byte = 15;  _g13 : Byte = 15;  _b13 : Byte = 15;
-  _r14 : Byte = 20;  _g14 : Byte = 20;  _b14 : Byte = 20;
+  // R, G, B of the background colors BG_PAL[0..3]
+  _bg_rgb : array[0..11] of Byte = (5, 5, 5,  10, 10, 10,  15, 15, 15,  20, 20, 20);
 
   _ic       : ShortInt = -1;
   _ic_save  : ShortInt = -1;
@@ -148,32 +146,37 @@ procedure DontForgetSetNameBeforeSave;
     Map_OBJ.SaveMap(Map_NAME.GetName);
   end;
 
+// one channel per call: _bg_c_changer 1..12 -> channel _bg_rgb[_bg_c_changer - 1],
+// colors 2 and 13 go one way, 3 and 14 the other; 13 is a pause and restarts the cycle
 procedure BackgroundColorMagic;
+  const
+    BG_PAL: array[0..3] of Byte = (2, 3, 13, 14);
+
+  var
+    _k, _c : Byte;
+
   begin
     inc(_col_inx2);
 
     if (_col_inx2 < 1000) then exit;
-    
-    _col_inx2 := 0;
-    if (((_r2 = 5) AND (_g2 = 5) AND (_b2 = 5)) OR ((_r2 = 10) AND (_g2 = 10) AND (_b2 = 10))) then _ic := - _ic;
 
-      inc(_bg_c_changer);
-      case _bg_c_changer of
-        1  : inc(_r2, _ic);    2 : inc(_g2, _ic);    3 : inc(_b2, _ic);    // Color 2
-        4  : dec(_r3, _ic);    5 : dec(_g3, _ic);    6 : dec(_b3, _ic);    // Color 3
-        7  : inc(_r13, _ic);   8 : inc(_g13, _ic);   9 : inc(_b13, _ic);   // Color 13
-        10 : dec(_r14, _ic);  11 : dec(_g14, _ic);  12 : dec(_b14, _ic);   // Color 14
-        else _bg_c_changer := 0;
+    _col_inx2 := 0;
+    // color 2 is gray 5 or 10: turn back
+    if (_bg_rgb[0] in [5, 10]) AND (_bg_rgb[1] = _bg_rgb[0]) AND (_bg_rgb[2] = _bg_rgb[0]) then _ic := - _ic;
+
+    inc(_bg_c_changer);
+    if _bg_c_changer > 12 then
+      begin
+        _bg_c_changer := 0;
+        exit;
       end;
 
-      if btwn(_bg_c_changer, 1, 3) then
-        SetPalette(2, _r2, _g2, _b2)
-      else if btwn(_bg_c_changer, 4, 6) then
-        SetPalette(3, _r3, _g3, _b3)
-      else if btwn(_bg_c_changer, 7, 9) then
-        SetPalette(13, _r13, _g13, _b13)
-      else if btwn(_bg_c_changer, 10, 12) then
-        SetPalette(14, _r14, _g14, _b14);
+    _k := _bg_c_changer - 1;
+    _c := _k div 3;
+    if odd(_c) then dec(_bg_rgb[_k], _ic) else inc(_bg_rgb[_k], _ic);
+
+    _k := _c * 3;
+    SetPalette(BG_PAL[_c], _bg_rgb[_k], _bg_rgb[_k + 1], _bg_rgb[_k + 2]);
   end;
 
 procedure ColorMagic;

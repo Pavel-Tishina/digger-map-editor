@@ -1,6 +1,9 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
+// File-List scroller object
+// Used in FileList object.
+// It contains up- and down-button and not clicable scroller line
 unit _fscl;
 
 interface
@@ -94,44 +97,47 @@ implementation
 
   procedure TFileScroll.DrawScrollButton(scrolling: ScrollType);
     var
-      __y : Byte;
+      __y : Word;
+      _d  : Byte;
     begin
-      __y := specialize IfElse<Byte>(scrolling = ScrollType.UP, _scroll_ym, 0);
+      __y := _y + specialize IfElse<Byte>(scrolling = ScrollType.UP, _scroll_ym, 0);
 
-      Rectangle(_x, _y + __y, _x + _l_line, _y + __y + _l_line, 7);
-      Line(_x + _s_line, _y + __y, _x + _s_line + _s_line, _y + __y, 8);
-      Line(_x + _s_line, _y + __y + _l_line, _x + _s_line + _s_line, _y + __y + _l_line, 8);
-      Line(_x, _y + __y + _s_line, _x, _y + __y + _s_line + _s_line, 8);
-      Line(_x + _l_line, _y + __y + _s_line, _x + _l_line, _y + __y + _s_line + _s_line, 8);
+      Rectangle(_x, __y, _x + _l_line, __y + _l_line, 7);
+      // gray marks in the middle of the sides: top and left, then bottom and right
+      _d := 0;
+      repeat
+        Line(_x + _s_line, __y + _d, _x + _s_line + _s_line, __y + _d, 8);
+        Line(_x + _d, __y + _s_line, _x + _d, __y + _s_line + _s_line, 8);
+        inc(_d, _l_line);
+      until _d > _l_line;
     end;
 
   // // // // // // // // //
 
+  // the down button is the up one mirrored: rows go up from _ym instead of down from _y
   procedure TFileScroll.DrawScrollButtonArrow(scrolling: ScrollType);
-    var __y : Word;
+    const
+      // arrow rectangles: x1, row1, x2, row2; rows are counted from the button's outer edge
+      ARROW: array[0..2, 0..3] of Byte = ((5, 4, 7, 7), (4, 7, 8, 8), (3, 9, 9, 10));
+
+    var
+      _i : Byte;
+
+    // screen y of the row r of the button
+    function RowY(r: Byte): Word;
+      begin
+        if scrolling = ScrollType.UP then
+          Result := _y + r
+        else
+          Result := _ym - r;
+      end;
 
     begin
-      if (scrolling = ScrollType.UP) then   // UP
-        begin
-          FilledSquare(_x + 1, _y + 1, _l_line - 2, 8, 8);
-          if (_files_pos_inx > 0) then
-            begin
-              Rectangle(_x + 5, _y + 4, _x + 7, _y + 7, 7);
-              Rectangle(_x + 4, _y + 7, _x + 8, _y + 8, 7);
-              Rectangle(_x + 3, _y + 9, _x + 9, _y + 10, 7);
-            end;
-        end
-      else                                  // DOWN
-        begin
-          FilledSquare(_x + 1, _ym - _l_line + 1, _l_line - 2, 8, 8);
-          if (_files_pos_inx < _pages - 1) then
-            begin
-              __y := _y + _scroll_ym + _l_line;
-              Rectangle(_x + 5, __y - 4, _x + 7, __y - 7, 7);
-              Rectangle(_x + 4, __y - 7, _x + 8, __y - 8, 7);
-              Rectangle(_x + 3, __y - 9, _x + 9, __y - 10, 7);            
-            end;
-        end;
+      FilledRectangle(_x + 1, RowY(1), _x + _l_line - 1, RowY(_l_line - 1), 8, 8);
+
+      if specialize IfElse<Boolean>(scrolling = ScrollType.UP, _files_pos_inx > 0, _files_pos_inx < _pages - 1) then
+        for _i := 0 to High(ARROW) do
+          Rectangle(_x + ARROW[_i, 0], RowY(ARROW[_i, 1]), _x + ARROW[_i, 2], RowY(ARROW[_i, 3]), 7);
     end;
 
   procedure TFileScroll.DrawScrollButtonArrows;

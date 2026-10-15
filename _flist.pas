@@ -1,6 +1,8 @@
 {$IMPLICITEXCEPTIONS OFF}
 {$MODE OBJFPC}
 
+// File-list object
+// Used in FileListWindow for listing files in /MAPS dir.
 unit _flist;
 
 interface
